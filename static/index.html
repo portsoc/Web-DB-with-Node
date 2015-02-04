@@ -5,132 +5,166 @@
 
 <h1>Happy Online ☺︎ Shop</h1>
 
-<ul id="categories">
-  <li class='active'>Electronics
-  <li>SomethingElse
-</ul>
+<main>
+    <aside id="cart" class="empty">
+      <p class="count"></p><p class="price">0</p>
+      <button>Place order</button>
+    </aside>
 
-<section id="category">
-  <h2>Electronics</h2>
+    <ul id="categories">
+      <li class='active'>loading...
+    </ul>
 
-  <section id="p1" class="product">
-    <h2>Prod1</h2>
-    <p class="price">10.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">BigInc</p>
-    <p class="stock">10+</p>
-  </section>
+    <section id="products">
+      <h2 id="category_title" class="loading">loading...</h2>
 
-  <section id="p2" class="product">
-    <h2>Prod2</h2>
-    <p class="price">79.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">SmallInc</p>
-    <p class="stock">only 3</p>
-  </section>
+      <template id="product_template">
+        <section class="product">
+          <h2 class="title"> </h2>
+          <p  class="price"></p>
+          <p  class="desc"></p>
+          <p  class="vendor"></p>
+          <p  class="stock"></p>
+          <button class="addtocart">Add to cart</button>
+        </section>
+      </template>
 
-  <section id="p3" class="product">
-    <h2>Prod1</h2>
-    <p class="price">10.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">BigInc</p>
-    <p class="stock">10+</p>
-  </section>
+    </section>
+</main>
 
-  <section id="p4" class="product">
-    <h2>Prod2</h2>
-    <p class="price">79.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">SmallInc</p>
-    <p class="stock">only 3</p>
-  </section>
 
-  <section id="p5" class="product">
-    <h2>Prod1</h2>
-    <p class="price">10.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">BigInc</p>
-    <p class="stock">10+</p>
-  </section>
-
-  <section id="p6" class="product">
-    <h2>Prod2</h2>
-    <p class="price">79.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">SmallInc</p>
-    <p class="stock">only 3</p>
-  </section>
-
-  <section id="p7" class="product">
-    <h2>Prod1</h2>
-    <p class="price">10.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">BigInc</p>
-    <p class="stock">10+</p>
-  </section>
-
-  <section id="p8" class="product">
-    <h2>Prod2</h2>
-    <p class="price">79.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">SmallInc</p>
-    <p class="stock">only 3</p>
-  </section>
-
-  <section id="p9" class="product">
-    <h2>Prod1</h2>
-    <p class="price">10.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">BigInc</p>
-    <p class="stock">10+</p>
-  </section>
-
-<template id="product-template">
-  <section id="p10" class="product">
-    <h2>Prod2</h2>
-    <p class="price">79.99</p>
-    <p class="desc">lorem ipsum sdofihqepgi unqerogiub qergiqerbu gvpiasng
-    paisgnjae riobuaenr gbiaernbp aernbar epiguna ergioab </p>
-    <p class="vendor">SmallInc</p>
-    <p class="stock">only 3</p>
-  </section>
-</template>
-
-</section>
 
 <script>
 
     'use strict';
-    var categoriesURL = new URL('/api/categories/');
     var apiKey = 'orewgthwoetgoirwejgboerigqt';
     
     function loadCategories() {
+        cleanProducts();
+
         var xhr = new XMLHttpRequest();
         xhr.onload = populateCategories;
         xhr.onerror = function() {
             console.error("error loading categories");
-            setTimeout(loadCategories, 5000);
+            apiFail();
         }
-        xhr.open("get", categoriesURL, true);
+        xhr.open("get", '/api/categories/', true, apiKey);
         xhr.send();
     }
+
+    var cancelProductLoad;
     
-    function loadProducts(categoryURI) {
+    function loadProducts(productsURL) {
+        if (cancelProductLoad) cancelProductLoad();
         var xhr = new XMLHttpRequest();
         xhr.onload = populateProducts;
         xhr.onerror = function() {
-            console.error("error loading products from category " + categoryURI);
+            console.error("error loading products from category " + productsURL);
+            apiFail();
         }
-        xhr.open("get", categoryURI, true);
+        xhr.open("get", productsURL, true, apiKey);
         xhr.send();
+        cancelProductLoad = function() {xhr.abort();}
     }
+
+    function populateCategories() {
+        if (this.status >= 300) return apiFail();
+
+        var data = JSON.parse(this.responseText);
+        var categoriesEl = document.getElementById('categories');
+
+        // empty the current list
+        while (categoriesEl.firstChild) categoriesEl.removeChild(categoriesEl.firstChild);
+
+        data.categories.forEach(function (category, idx) {
+            var li = document.createElement('li');
+            li.textContent = category.title;
+            li.dataset.url = category.productsURL;
+            li.addEventListener('click', selectCategory);
+            categoriesEl.appendChild(li);
+        });
+
+        selectCategory({target: categoriesEl.firstChild});
+    }
+
+    function cleanProducts() {
+        // empty the current list of products
+        var productsEl = document.getElementById('products');
+        [].slice.call(productsEl.querySelectorAll('section.product')).forEach(function(el) {
+            productsEl.removeChild(el);
+        });
+        
+        var productsHeader = document.getElementById('category_title');
+        productsHeader.classList.add('loading');
+        productsHeader.textContent = 'loading...';
+    }
+
+    function selectCategory(ev) {
+        var li = ev.target;
+
+        var oldLi = li.parentElement.querySelector('.active');
+        if (oldLi) oldLi.classList.remove('active');
+
+        li.classList.add('active');
+        
+        cleanProducts();
+
+        loadProducts(li.dataset.url);
+    }
+
+    function populateProducts() {
+        if (this.status >= 300) return apiFail();
+
+        var data = JSON.parse(this.responseText);
+        var productsEl = document.getElementById('products');
+        var productsHeader = document.getElementById('category_title');
+        var productTemplate = document.getElementById('product_template');
+
+        productsHeader.classList.remove('loading');
+        productsHeader.textContent = data.category;
+
+        for (var prodId in data.products) {
+            var product = data.products[prodId];
+            product.id = prodId;
+            var prodFragment = document.importNode(productTemplate.content, true);
+
+            prodFragment.querySelector('.title' ).textContent = product.title;
+            prodFragment.querySelector('.price' ).textContent = product.price;
+            prodFragment.querySelector('.desc'  ).textContent = product.description;
+            prodFragment.querySelector('.vendor').textContent = product.vendor;
+            prodFragment.querySelector('.stock' ).textContent = product.stock;
+
+            if (product.stock > 0) {
+                prodFragment.querySelector('section').classList.add('available');
+                var cartButton = prodFragment.querySelector('.addtocart');
+                cartButton.product = product;
+                cartButton.onclick = function(ev) {
+                    addToCart(ev.target.product);
+                }
+            }
+
+            productsEl.appendChild(prodFragment);
+        }
+    }
+
+    var cart = [];
+    var cartPrice = 0;
+
+    function addToCart(product) { 
+        var cartEl = document.getElementById('cart');
+        cart.push(product);
+        cartPrice += product.price;
+
+        cartEl.querySelector('.count').textContent = cart.length;
+        cartEl.querySelector('.price').textContent = cartPrice.toFixed(2);
+        if (cart.length > 0) {
+            cartEl.classList.remove('empty');
+        }
+    }
+
+    function apiFail() {
+        document.querySelector('main').innerHTML = "Sorry, the site is temporarily unhappy, please try again later.";
+    }
+
+    document.body.onload = loadCategories;
 </script>
