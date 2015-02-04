@@ -8,7 +8,10 @@
 <main>
     <aside id="cart" class="empty">
       <p class="count"></p><p class="price">0</p>
-      <button>Place order</button>
+      <label class="main">Please tell us about yourself:</label>
+      <label for="cart-name" class="name">Name:</label><input class="name" id="cart-name">
+      <label for="cart-addr" class="addr">Address:</label><input class="addr" id="cart-addr">
+      <button id="placeorder">Place order</button>
     </aside>
 
     <ul id="categories">
@@ -71,7 +74,7 @@
         if (this.status >= 300) return apiFail();
 
         var data = JSON.parse(this.responseText);
-        var categoriesEl = document.getElementById('categories');
+        var categoriesEl = byId('categories');
 
         // empty the current list
         while (categoriesEl.firstChild) categoriesEl.removeChild(categoriesEl.firstChild);
@@ -89,12 +92,12 @@
 
     function cleanProducts() {
         // empty the current list of products
-        var productsEl = document.getElementById('products');
+        var productsEl = byId('products');
         [].slice.call(productsEl.querySelectorAll('section.product')).forEach(function(el) {
             productsEl.removeChild(el);
         });
         
-        var productsHeader = document.getElementById('category_title');
+        var productsHeader = byId('category_title');
         productsHeader.classList.add('loading');
         productsHeader.textContent = 'loading...';
     }
@@ -116,9 +119,9 @@
         if (this.status >= 300) return apiFail();
 
         var data = JSON.parse(this.responseText);
-        var productsEl = document.getElementById('products');
-        var productsHeader = document.getElementById('category_title');
-        var productTemplate = document.getElementById('product_template');
+        var productsEl = byId('products');
+        var productsHeader = byId('category_title');
+        var productTemplate = byId('product_template');
 
         productsHeader.classList.remove('loading');
         productsHeader.textContent = data.category;
@@ -138,8 +141,8 @@
                 prodFragment.querySelector('section').classList.add('available');
                 var cartButton = prodFragment.querySelector('.addtocart');
                 cartButton.product = product;
-                cartButton.onclick = function(ev) {
-                    addToCart(ev.target.product);
+                cartButton.onclick = function() {
+                    addToCart(this.product);
                 }
             }
 
@@ -147,23 +150,103 @@
         }
     }
 
-    var cart = [];
+    var cart = {};
     var cartPrice = 0;
+    var cartCount = 0;
 
     function addToCart(product) { 
-        var cartEl = document.getElementById('cart');
-        cart.push(product);
-        cartPrice += product.price;
+        if (product.id in cart) cart[product.id].qty++;
+        else cart[product.id] = { product: product.id, qty: 1, price: product.price };
 
-        cartEl.querySelector('.count').textContent = cart.length;
+        cartPrice += product.price;
+        cartCount++;
+
+        var cartEl = byId('cart');
+
+        cartEl.querySelector('.count').textContent = cartCount.toFixed();
         cartEl.querySelector('.price').textContent = cartPrice.toFixed(2);
-        if (cart.length > 0) {
-            cartEl.classList.remove('empty');
+        cartEl.classList.remove('empty');
+
+        byId('placeorder').onclick = placeOrder;
+    }
+
+    function placeOrder() {
+        var cartEl = byId('cart');
+        cartEl.classList.add('expanded');
+
+        byId('cart-name').focus();
+        byId('cart-name').onblur = verifyNonEmpty;
+        byId('cart-addr').onblur = verifyNonEmpty;
+        byId('placeorder').onclick = placeOrderVerify;
+    }
+
+    function verifyNonEmpty() {
+        if (this.value === '') {
+            this.classList.add('error');
+        } else {
+            this.classList.remove('error');
         }
+    }
+
+    function placeOrderVerify() {
+        var cartEl = byId('cart');
+        cartEl.classList.add('expanded');
+        var ok = true;
+
+        if (byId('cart-addr').value === '') {
+            byId('cart-addr').focus();
+            byId('cart-addr').classList.add('error');
+            ok = false;
+        }
+        if (byId('cart-name').value === '') {
+            byId('cart-name').focus();
+            byId('cart-name').classList.add('error');
+            ok = false;
+        }
+
+        if (ok) submitOrder();
+    }
+
+    function submitOrder() {
+        var order = { 
+          lines: [], 
+          address: byId('cart-addr').value,
+          buyer: byId('cart-name').value
+        }
+
+        for (var key in cart) {
+            order.lines.push( cart[key] );
+        }
+
+        byId('placeorder').disabled = true;
+        byId('cart').classList.remove('expanded');
+
+        var xhr = new XMLHttpRequest();
+        xhr.onload = orderSubmitted;
+        xhr.onerror = function() {
+            console.error("error submitting order");
+            apiFail();
+        }
+        xhr.open("post", '/api/orders/', true, apiKey);
+        xhr.setRequestHeader('Content-Type', 'application/json')
+        xhr.send(JSON.stringify(order));
+    }
+
+    function orderSubmitted() {
+        if (this.status !== 201) {
+            console.log("order not submitted as expected");
+            return apiFail();
+        }
+
+        window.location = "/order?id=" + encodeURIComponent(this.getResponseHeader('location'));
     }
 
     function apiFail() {
         document.querySelector('main').innerHTML = "Sorry, the site is temporarily unhappy, please try again later.";
+    }
+
+    function byId(id) { 
+        return document.getElementById(id);
     }
 
     document.body.onload = loadCategories;
