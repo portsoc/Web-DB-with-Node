@@ -18,12 +18,15 @@ app.use(express.static('static', { maxAge: 5*60*1000 /* fiveMinutes */, extensio
 app.use(bodyParser.json({limit: 4096}))
 
 
+var apiKey = 'orewgthwoetgoirwejgboerigqt';
+
+
 var categories = {
       categories: [
         { title: "Cameras",
-          productsURL: "cam/" },
+          productsURL: "/api/categories/cam/" },
         { title: "Laptops",
-          productsURL: "laptop/" }
+          productsURL: "/api/categories/laptop/" }
       ]
     };
 
@@ -105,6 +108,8 @@ app.get('/api/categories/', function(req, res) {
     res.send(categories);
 });
 
+app.post('/api/categories/', notImplemented);
+
 app.get('/api/categories/:id/', function(req, res) {
     if (req.params.id in products) res.send(products[req.params.id]);
     else res.status(404).send('no such category: ' + req.params.id + '\n');
@@ -144,3 +149,12 @@ app.get('/api/orders/:id', function(req, res) {
 // rate limiting, validation, authorization
 
 app.listen(8088);
+
+
+
+
+
+
+function notImplemented(req, res) {
+    res.status(501).send("this functionality is envisioned but not implemented yet\n");
+}

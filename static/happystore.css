@@ -1,0 +1,22 @@
+p.price::before { content: '£'; }
+p.stock::after { content: ' in store'; }
+
+html { display: block; padding: 0; margin: 0; width: 100%; }
+body { display: block; padding: 1em; width: 90%; width: calc(100% - 2em); margin: 0; background: #adf; }
+
+#categories { margin: 0; display: block; padding: 0; }
+#categories li { background: #bef; display: inline-block; margin: 0; border: 1px solid black; border-bottom: none; padding: 1em; }
+#categories li:hover { background: yellow; cursor: pointer; }
+#categories li.active { background: white; cursor: default; }
+#categories li + li { border-left: none; }
+
+#category { background: white; margin: 0; display: block; width: 90%; width: calc(100% - 2em); border: 1px solid black; padding: 1em; position: relative; }
+
+#category section,
+#category h2 { margin: 0; }
+
+#category > h2 { display: none; }
+
+#category .product { display: inline-block; width: 16em; padding: 1em; margin: 1em; }
+
+template { display: none; }
