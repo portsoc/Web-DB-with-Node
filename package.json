@@ -1,0 +1,11 @@
+{
+  "name": "DBPRIN-node-example",
+  "description": "an example server and API for a database app",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "express": "4.x",
+    "serve-index": "1.x.x",
+    "body-parser": "1.x.x"
+  }
+}

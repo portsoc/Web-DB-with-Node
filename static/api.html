@@ -1,0 +1,130 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>DBPRIN example API docs</title>
+<style>
+section { margin-top: 2em; border-top: 2px solid black; }
+article { margin: 2em; }
+pre { max-height: 4em; width: 40em; transition: 2s 2s; border: 1px solid black; overflow: auto; padding: 1em; }
+pre:hover { max-height: 30em; transition: 1s;}
+</style>
+
+<article>
+<h1>DBPRIN example API docs</h1>
+
+<p>This online marketplace API has the following resources:</p>
+<ol>
+  <li><a href="#cats"><code>/api/categories/</code></a> – the list of all categories
+  <li><a href="#cat"><code>/api/categories/:id/</code></a> – the list of products in a given category
+  <li><a href="#ords"><code>/api/orders/</code></a> – the orders
+  <li><a href="#ord"><code>/api/orders/:number</code></a> – a particular order
+</ol>
+
+<section>
+  <h2 id="cats"><code>/api/categories/</code> – the list of all categories</h2>
+  <p>Supports HTTP GET to retrieve all the categories. Example response:</p>
+  <pre>{
+ "categories": [
+  {
+   "title": "Cameras",
+   "productsURL": "cam\/"
+  },
+  {
+   "title": "Laptops",
+   "productsURL": "laptop\/"
+  }
+ ]
+}</pre>
+</section>
+
+<section>
+  <h2 id="cat"><code>/api/categories/:id/</code> – the list of products in a given category</h2>
+  <p>Supports HTTP GET to retrieve all the products in a given category, and
+  HTTP POST to add a product or multiple products to the category. The
+  <code>productsURL</code> part of a category definition is a relative URL
+  that points to one of these category products resources.</p>
+  <p>Example response for HTTP GET:</p>
+  <pre>{
+ "category": "Cameras",
+ "products": {
+  "nixon123x": {
+   "title": "Nixon 123X",
+   "price": 123.45,
+   "description": "A basic camera, 12.3MPix",
+   "stock": 14,
+   "vendor": "Nixon Specialists Inc."
+  },
+  "gunonp40e": {
+   "title": "Gunon P40E",
+   "price": 580.99000000000001,
+   "description": "Body (no lenses), 40MPix",
+   "stock": 2,
+   "vendor": "BigShop Inc."
+  }
+ }
+}</pre>
+
+  <p>Example input (POST body) for the POST method:</p>
+  <pre>{ "gunonp40e": {
+   "title": "Gunon P40E",
+   "price": 580.99000000000001,
+   "description": "Body (no lenses), 40MPix",
+   "stock": 2,
+   "vendor": "BigShop Inc."
+  }
+}</pre>
+
+  <p>The response will confirm that the product was added; if any product ID
+  already exists in this category, the method will fail without adding any
+  product at all.</p>
+</section>
+
+<section>
+  <h2 id="ords"><code>/api/orders/</code> – the orders</h2>
+  <p>Supports HTTP POST to make a new order. Example input (POST body):</p>
+  <pre>{
+ "lines": [
+  {
+   "product": "leonvo386",
+   "qty": 1,
+   "price": 320
+  },
+  {
+   "product": "gunonp40e",
+   "qty": 1,
+   "price": 599.99000000000001
+  }
+ ],
+ "address": "42 The Matrix",
+ "buyer": "Mr Anderson"
+}</pre>
+  <p>On success, the method returns 201 Created, with Loation pointing to the
+  URL of the new order resource (described below); the return body contains the newly created
+  order together with a creation date set by the server.</p>
+</section>
+
+<section>
+  <h2 id="ord"><code>/api/orders/:number</code> – a particular order</h2>
+  <p>Supports HTTP GET to retrieve the details of a single order. Example
+  output:</p>
+  <pre>{
+ "lines": [
+  {
+   "product": "leonvo386",
+   "qty": 1,
+   "price": 320
+  },
+  {
+   "product": "gunonp40e",
+   "qty": 1,
+   "price": 599.99000000000001
+  }
+ ],
+ "address": "42 The Matrix",
+ "buyer": "Mr Anderson",
+ "date": "2015-02-06",
+ "dispatched": false
+}</pre>                          
+</section>
+
+</article>
+
