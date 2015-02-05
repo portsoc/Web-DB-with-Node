@@ -223,6 +223,6 @@ function notImplemented(req, res) {
 }
 
 function delay(req, res, next) {
-    next();
-    // setTimeout(next, 1000);
+    // next();
+    setTimeout(next, 1000);
 }
