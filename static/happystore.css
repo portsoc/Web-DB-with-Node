@@ -145,3 +145,5 @@ input.error { border: 2px solid red; }
 }
 
 template { display: none; }
+
+code { font-family: monospace; }

@@ -238,7 +238,17 @@
             return apiFail();
         }
 
+        clearCart();
+
         window.location = "/order?id=" + encodeURIComponent(this.getResponseHeader('location'));
+    }
+
+    function clearCart() {
+        byId('placeorder').disabled = false;
+        byId('cart').classList.add('empty');
+        cart = {};
+        cartPrice = 0;
+        cartCount = 0;
     }
 
     function apiFail() {

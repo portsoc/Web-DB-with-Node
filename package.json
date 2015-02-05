@@ -5,7 +5,6 @@
   "private": true,
   "dependencies": {
     "express": "4.x",
-    "serve-index": "1.x.x",
     "body-parser": "1.x.x",
     "basic-auth": "1.x.x"
   }

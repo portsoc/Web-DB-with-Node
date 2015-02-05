@@ -6,7 +6,7 @@
 <h1>Happy Online ☺︎ Shop Order Tracking</h1>
 
 <main>
-    Order data:
+    Order data: (id <code id="orderid"></code>)
     <pre id="order"></pre>
     <button onclick="loadOrder();">reload</button>
 </main>
@@ -26,6 +26,8 @@
             byId('order').textContent = "no order specified";
             return;
         }
+
+        byId('orderid').textContent = orderURI;
 
         var xhr = new XMLHttpRequest();
         xhr.onload = populateOrderData;
