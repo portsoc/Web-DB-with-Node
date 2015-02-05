@@ -1,7 +1,11 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>HappyOnlineShop</title>
-<link rel="stylesheet" href="happystore.css">
+<link rel="stylesheet" href="css/happystore.css">
+<script src="js/tools.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/products.js"></script>
+<script src="js/categories.js"></script>
 
 <h1>Happy Online ☺︎ Shop</h1>
 
@@ -15,11 +19,11 @@
     </aside>
 
     <ul id="categories">
-      <li class='active'>loading...
+      <li class='active'>loading&hellip;
     </ul>
 
     <section id="products">
-      <h2 id="category_title" class="loading">loading...</h2>
+      <h2 id="category_title" class="loading">loading&hellip;</h2>
 
       <template id="product_template">
         <section class="product">
@@ -38,226 +42,8 @@
 
 
 <script>
-
     'use strict';
     var apiKey = 'orewgthwoetgoirwejgboerigqt';
-    
-    function loadCategories() {
-        cleanProducts();
-
-        var xhr = new XMLHttpRequest();
-        xhr.onload = populateCategories;
-        xhr.onerror = function() {
-            console.error("error loading categories");
-            apiFail();
-        }
-        xhr.open("get", '/api/categories/', true, apiKey);
-        xhr.send();
-    }
-
-    var cancelProductLoad;
-    
-    function loadProducts(productsURL) {
-        if (cancelProductLoad) cancelProductLoad();
-        var xhr = new XMLHttpRequest();
-        xhr.onload = populateProducts;
-        xhr.onerror = function() {
-            console.error("error loading products from category " + productsURL);
-            apiFail();
-        }
-        xhr.open("get", productsURL, true, apiKey);
-        xhr.send();
-        cancelProductLoad = function() {xhr.abort();}
-    }
-
-    function populateCategories() {
-        if (this.status >= 300) return apiFail();
-
-        var data = JSON.parse(this.responseText);
-        var categoriesEl = byId('categories');
-
-        // empty the current list
-        while (categoriesEl.firstChild) categoriesEl.removeChild(categoriesEl.firstChild);
-
-        data.categories.forEach(function (category, idx) {
-            var li = document.createElement('li');
-            li.textContent = category.title;
-            li.dataset.url = category.productsURL;
-            li.addEventListener('click', selectCategory);
-            categoriesEl.appendChild(li);
-        });
-
-        selectCategory({target: categoriesEl.firstChild});
-    }
-
-    function cleanProducts() {
-        // empty the current list of products
-        var productsEl = byId('products');
-        [].slice.call(productsEl.querySelectorAll('section.product')).forEach(function(el) {
-            productsEl.removeChild(el);
-        });
-        
-        var productsHeader = byId('category_title');
-        productsHeader.classList.add('loading');
-        productsHeader.textContent = 'loading...';
-    }
-
-    function selectCategory(ev) {
-        var li = ev.target;
-
-        var oldLi = li.parentElement.querySelector('.active');
-        if (oldLi) oldLi.classList.remove('active');
-
-        li.classList.add('active');
-        
-        cleanProducts();
-
-        loadProducts(li.dataset.url);
-    }
-
-    function populateProducts() {
-        if (this.status >= 300) return apiFail();
-
-        var data = JSON.parse(this.responseText);
-        var productsEl = byId('products');
-        var productsHeader = byId('category_title');
-        var productTemplate = byId('product_template');
-
-        productsHeader.classList.remove('loading');
-        productsHeader.textContent = data.category;
-
-        for (var prodId in data.products) {
-            var product = data.products[prodId];
-            product.id = prodId;
-            var prodFragment = document.importNode(productTemplate.content, true);
-
-            prodFragment.querySelector('.title' ).textContent = product.title;
-            prodFragment.querySelector('.price' ).textContent = product.price;
-            prodFragment.querySelector('.desc'  ).textContent = product.description;
-            prodFragment.querySelector('.vendor').textContent = product.vendor;
-            prodFragment.querySelector('.stock' ).textContent = product.stock;
-
-            if (product.stock > 0) {
-                prodFragment.querySelector('section').classList.add('available');
-                var cartButton = prodFragment.querySelector('.addtocart');
-                cartButton.product = product;
-                cartButton.onclick = function() {
-                    addToCart(this.product);
-                }
-            }
-
-            productsEl.appendChild(prodFragment);
-        }
-    }
-
-    var cart = {};
-    var cartPrice = 0;
-    var cartCount = 0;
-
-    function addToCart(product) { 
-        if (product.id in cart) cart[product.id].qty++;
-        else cart[product.id] = { product: product.id, qty: 1, price: product.price };
-
-        cartPrice += product.price;
-        cartCount++;
-
-        var cartEl = byId('cart');
-
-        cartEl.querySelector('.count').textContent = cartCount.toFixed();
-        cartEl.querySelector('.price').textContent = cartPrice.toFixed(2);
-        cartEl.classList.remove('empty');
-
-        byId('placeorder').onclick = placeOrder;
-    }
-
-    function placeOrder() {
-        var cartEl = byId('cart');
-        cartEl.classList.add('expanded');
-
-        byId('cart-name').focus();
-        byId('cart-name').onblur = verifyNonEmpty;
-        byId('cart-addr').onblur = verifyNonEmpty;
-        byId('placeorder').onclick = placeOrderVerify;
-    }
-
-    function verifyNonEmpty() {
-        if (this.value === '') {
-            this.classList.add('error');
-        } else {
-            this.classList.remove('error');
-        }
-    }
-
-    function placeOrderVerify() {
-        var cartEl = byId('cart');
-        cartEl.classList.add('expanded');
-        var ok = true;
-
-        if (byId('cart-addr').value === '') {
-            byId('cart-addr').focus();
-            byId('cart-addr').classList.add('error');
-            ok = false;
-        }
-        if (byId('cart-name').value === '') {
-            byId('cart-name').focus();
-            byId('cart-name').classList.add('error');
-            ok = false;
-        }
-
-        if (ok) submitOrder();
-    }
-
-    function submitOrder() {
-        var order = { 
-          lines: [], 
-          address: byId('cart-addr').value,
-          buyer: byId('cart-name').value
-        }
-
-        for (var key in cart) {
-            order.lines.push( cart[key] );
-        }
-
-        byId('placeorder').disabled = true;
-        byId('cart').classList.remove('expanded');
-
-        var xhr = new XMLHttpRequest();
-        xhr.onload = orderSubmitted;
-        xhr.onerror = function() {
-            console.error("error submitting order");
-            apiFail();
-        }
-        xhr.open("post", '/api/orders/', true, apiKey);
-        xhr.setRequestHeader('Content-Type', 'application/json')
-        xhr.send(JSON.stringify(order));
-    }
-
-    function orderSubmitted() {
-        if (this.status !== 201) {
-            console.log("order not submitted as expected");
-            return apiFail();
-        }
-
-        clearCart();
-
-        window.location = "/order?id=" + encodeURIComponent(this.getResponseHeader('location'));
-    }
-
-    function clearCart() {
-        byId('placeorder').disabled = false;
-        byId('cart').classList.add('empty');
-        cart = {};
-        cartPrice = 0;
-        cartCount = 0;
-    }
-
-    function apiFail() {
-        document.querySelector('main').innerHTML = "Sorry, the site is temporarily unhappy, please try again later.";
-    }
-
-    function byId(id) { 
-        return document.getElementById(id);
-    }
 
     document.body.onload = loadCategories;
 </script>
