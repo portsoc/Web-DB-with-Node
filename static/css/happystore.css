@@ -100,7 +100,7 @@ body {
     visibility: visible; 
 }
 
-/* presentation of prices, level of stock, and vendors */
+/* presentation of prices, level of stock, and suppliers */
 
 p.price::before  { 
     content: '£'; 
@@ -108,7 +108,7 @@ p.price::before  {
 p.stock::after   { 
     content: ' in store'; 
 }
-p.vendor::before { 
+p.suppl::before { 
     content: 'Sold by '; 
 }
 

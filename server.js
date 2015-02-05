@@ -52,21 +52,21 @@ products['cam'] = {
           price: 123.45,
           description: 'A basic camera, 12.3MPix',
           stock: 14,
-          vendor: 'Nixon Specialists Inc.'
+          supplier: 'Nixon Specialists Inc.'
         },
         gunonp40e: {
           title: 'Gunon P40E',
           price: 580.99,
           description: 'Body (no lenses), 40MPix',
           stock: 2,
-          vendor: 'BigShop Inc.'
+          supplier: 'BigShop Inc.'
         },
         gunonp30e: {
           title: 'Gunon P30E',
           price: 399.99,
           description: 'Body (no lenses), 30MPix, discontinued',
           stock: 0,
-          vendor: 'BigShop Inc.'
+          supplier: 'BigShop Inc.'
         }
       }
     };
@@ -78,14 +78,14 @@ products['laptop'] = {
           price: 349.99,
           description: '15" hi-res hi-perf with Windows',
           stock: 1,
-          vendor: 'BigShop Inc.'
+          supplier: 'BigShop Inc.'
         },
         leonvo386: {
           title: 'Leonvo Classic 386',
           price: 299.99,
           description: '13.3" flexible with Doors',
           stock: 73,
-          vendor: 'BigShop Inc.'
+          supplier: 'BigShop Inc.'
         }
       }
     };
@@ -98,21 +98,21 @@ products['phone'] = {
           price: 219.99,
           description: 'discontinued',
           stock: 0,
-          vendor: 'Kaboodle Inc.'
+          supplier: 'Kaboodle Inc.'
         },
         lexus2: {
           title: 'Lexus 5',
           price: 299.99,
           description: 'better, almost discontinued',
           stock: 7,
-          vendor: 'Kaboodle Inc.'
+          supplier: 'Kaboodle Inc.'
         },
         iph6: {
           title: 'flyPhone 6',
           price: 7399.90,
           description: 'not cheap but desirable',
           stock: 137,
-          vendor: 'Oranges Pears etc. Ltd'
+          supplier: 'Oranges Pears etc. Ltd'
         }
       }
     };

@@ -43,11 +43,11 @@ function populateProducts() {
         product.id = prodId;
         var prodFragment = document.importNode(byId('product_template').content, true);
 
-        findEl(prodFragment, '.title' ).textContent = product.title;
-        findEl(prodFragment, '.price' ).textContent = product.price;
-        findEl(prodFragment, '.desc'  ).textContent = product.description;
-        findEl(prodFragment, '.vendor').textContent = product.vendor;
-        findEl(prodFragment, '.stock' ).textContent = product.stock;
+        findEl(prodFragment, '.title').textContent = product.title;
+        findEl(prodFragment, '.price').textContent = product.price;
+        findEl(prodFragment, '.desc' ).textContent = product.description;
+        findEl(prodFragment, '.suppl').textContent = product.supplier;
+        findEl(prodFragment, '.stock').textContent = product.stock;
 
         if (product.stock > 0) {
             findEl(prodFragment, 'section').classList.add('available');
