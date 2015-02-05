@@ -8,10 +8,11 @@ function loadOrder() {
     }
 
     byId('orderid').textContent = orderURI;
+    byId('order').innerHTML = 'loading&hellip;';
 
     var xhr = new XMLHttpRequest();
     xhr.onload = populateOrderData;
-    xhr.onerror = apiFail();
+    xhr.onerror = apiFail;
     xhr.open("get", orderURI, true, apiKey);
     xhr.send();
 }
