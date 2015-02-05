@@ -3,6 +3,8 @@
 var cancelProductLoad;
 
 function loadProducts(productsURL) {
+    cleanProducts();
+
     if (cancelProductLoad) cancelProductLoad();
     var xhr = new XMLHttpRequest();
     xhr.onload = populateProducts;

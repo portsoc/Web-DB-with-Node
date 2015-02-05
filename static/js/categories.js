@@ -41,8 +41,8 @@ function selectCategory(ev) {
 
     li.classList.add('active');
 
-    cleanProducts();
-
     loadProducts(li.dataset.url);
 }
 
+
+// todo make API between different JS files into custom events?
