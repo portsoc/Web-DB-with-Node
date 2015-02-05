@@ -1,0 +1,236 @@
+/* nice design, or what passes for one */
+
+body { 
+    padding: 1em; 
+    margin: 0; 
+    background: #adf; 
+}
+
+/* presentation of the list of categories as tabs */
+
+#categories { 
+    margin: 0; 
+    display: block; 
+    padding: 0; 
+}
+#categories li { 
+    background: #bef; 
+    display: inline-block; 
+    margin: 0; 
+    border: 1px solid black; 
+    border-bottom: none; 
+    border-right: none; 
+    border-radius: .5em .5em 0 0; 
+    padding: 1em; 
+    transition: background .5s; 
+}
+#categories li:last-of-type { 
+    border-right: 1px solid black; 
+}
+
+/* highlight current tab, and tab under the mouse pointer */
+
+#categories li:hover { 
+    background: yellow; 
+    cursor: pointer; 
+    transition: 0s; 
+}
+#categories li.active { 
+    background: white; 
+    cursor: default; 
+}
+
+/* presentation of products and shopping cart */
+
+#products { 
+    background: white; 
+    margin: 0; 
+    display: block; 
+    width: 100%; 
+    box-sizing: border-box;
+    border: 1px solid black; 
+    padding: 1em; 
+    position: relative; 
+    border-radius: 0 .5em .5em .5em;
+}
+#products section,
+#products h2 { 
+    margin: 0; 
+}
+#products > h2 {  /* hide the category title, the active tab is enough for sighted users */
+    display: none; 
+}
+#products > h2.loading { 
+    display: block; 
+    font-size: 100%; 
+    font-weight: normal; 
+}
+#products .product { 
+    display: inline-block; 
+    position: relative; 
+    width: 16em; 
+    padding: 2em; 
+    margin: 0; 
+    vertical-align: top; 
+}
+#products .product h2 { 
+    display: inline; 
+    margin-right: 1em; 
+}
+#products .product h2 + p.price { 
+    display: inline; 
+}
+
+/* highlight product under the mouse pointer, show the Add to Cart button,
+ * but only for products that are actually available 
+ */
+
+#products .product:hover { 
+    background: #fec; 
+}
+#products .product .addtocart { 
+    visibility: hidden; 
+    display: block; 
+    position: absolute;
+    bottom: 2em; 
+    right: 2em;
+    font-size: 80%;
+}
+#products .product.available:hover .addtocart { 
+    visibility: visible; 
+}
+
+/* presentation of prices, level of stock, and vendors */
+
+p.price::before  { 
+    content: '£'; 
+}
+p.stock::after   { 
+    content: ' in store'; 
+}
+p.vendor::before { 
+    content: 'Sold by '; 
+}
+
+/* presentation of shopping cart */
+
+#cart { 
+    z-index: 1; 
+    display: block;
+    position: absolute; 
+    top: 1em;
+    right: 1em;
+    padding: .5em 1em 3em 1em;
+    transition: 1s;
+    border-radius: .5em;
+    border: 1px solid rgba(0,0,0,0);
+}
+#cart.expanded { 
+    padding: 2em 2em 9em 2em;
+    box-shadow: .5em .5em 1.5em 0 black;
+}
+#cart:hover,
+#cart.expanded { 
+    background: white;
+    border: 1px solid black;
+}
+#cart input, 
+#cart label,
+#cart button { 
+    opacity: 0; 
+    display: block;
+    position: absolute; 
+    font-size: 80%; 
+}
+#cart button {
+    bottom: 1em;
+    right: 1em;
+}
+#cart input {
+    right: 2em;
+    width: 10em;
+}
+#cart label {
+    right: 13em;
+}
+#cart label.main { 
+    bottom: 9em;
+    right: 2em;
+}
+#cart label.name,
+#cart input.name { 
+    bottom: 7em;
+}
+#cart label.addr,
+#cart input.addr { 
+    bottom: 5em;
+}
+#cart.expanded button {
+    bottom: 2em;
+    right: 2em;
+}
+#cart p.count { 
+    display: inline; 
+}
+#cart p.count:after { 
+    display: inline; 
+    content: ' item in the cart'; 
+}
+#cart p.price { 
+    display: inline; 
+}
+#cart p.price:before { 
+    display: inline; 
+    content: ', total: £'; 
+}
+#cart.empty { 
+    padding: .5em 1em; 
+}
+#cart.empty p.count:after { 
+    display: inline; 
+    content: 'Cart empty'; 
+}
+#cart.empty p.price { 
+    display: none; 
+}
+#cart.empty:hover button { 
+    opacity: 0; 
+}
+
+/* nice animated transitions */
+
+#cart input, 
+#cart label {
+    transition: opacity .3s;
+}
+#cart button { 
+    transition: opacity 1s, bottom 1s, right 1s; 
+}
+#cart:hover button,
+#cart.expanded button { 
+    opacity: 1; 
+}
+#cart.expanded input,
+#cart.expanded label {
+    opacity: 1;
+    transition-delay: .5s;
+}
+
+/* hide template from older browsers */
+
+template { 
+    display: none; 
+}
+
+/* use code-appropriate font */
+
+code { 
+    font-family: monospace; 
+}
+
+/* highlight omitted required and otherwise erroneous input fields */
+
+input.error { 
+    border: 2px solid red; 
+}
+
