@@ -248,7 +248,10 @@ app.post('/api/orders/', function(req, res) {
     order.date = new Date();
     order.dispatched = false;
     var orderNo = orders.push(order) - 1;
-    res.location('/api/orders/' + orderNo).status(201).send(order);
+
+    var orderURL = '/api/orders/' + orderNo;
+    res.set('Content-Location', orderURL);
+    res.location(orderURL).status(201).send(order);
 
     console.log("received order " + orderNo);
 
