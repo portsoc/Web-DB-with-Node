@@ -3,21 +3,13 @@
 <title>HappyOnlineShop</title>
 <link rel="stylesheet" href="css/happystore.css">
 <script src="js/tools.js"></script>
-<script src="js/cart.js"></script>
-<script src="js/products.js"></script>
 <script src="js/categories.js"></script>
+<script src="js/products.js"></script>
+<script src="js/cart.js"></script>
 
-<h1>Happy Online ☺︎ Shop</h1>
+<h1>Happy Online &#x263a; Shop</h1>
 
 <main>
-    <aside id="cart" class="empty">
-      <p class="count"></p><p class="price">0</p>
-      <label class="main">Please tell us about yourself:</label>
-      <label for="cart-name" class="name">Name:</label><input class="name" id="cart-name">
-      <label for="cart-addr" class="addr">Address:</label><input class="addr" id="cart-addr">
-      <button id="placeorder">Place order</button>
-    </aside>
-
     <ul id="categories">
       <li class='active'>loading&hellip;
     </ul>
@@ -32,11 +24,20 @@
           <p  class="desc"></p>
           <p  class="suppl"></p>
           <p  class="stock"></p>
-          <button class="addtocart">Add to cart</button>
+          <button class="addtocart" onclick="addProductToCart(this.parentElement.product)">Add to cart</button>
         </section>
       </template>
 
     </section>
+    
+    <aside id="cart" class="empty">
+      <p class="count"></p><p class="price">0</p>
+      <label class="main">Please tell us about yourself:</label>
+      <label for="cart-name" class="name">Name:</label><input class="name" id="cart-name" onblur="verifyNonEmpty(this)">
+      <label for="cart-addr" class="addr">Address:</label><input class="addr" id="cart-addr" onblur="verifyNonEmpty(this)">
+      <button id="placeorder" onclick="placeOrder()">Place order</button>
+    </aside>
+
 </main>
 
 

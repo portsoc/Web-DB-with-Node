@@ -8,6 +8,10 @@ function findEl(root, selector) {
     return root.querySelector(selector);
 }
 
+function array(arr) {
+    return [].slice.call(arr);
+}
+
 // function from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
 function getParameterByName(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");

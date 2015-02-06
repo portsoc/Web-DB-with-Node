@@ -1,11 +1,27 @@
 // functions for loading and showing the products in a given category
 
-var cancelProductLoad;
+// this file requires the variable `apiKey` to be defined outside
+
+// empty the current list of products
+function cleanProducts() {
+    var productsEl = byId('products');
+    var oldProducts = array(productsEl.querySelectorAll('section.product'));
+
+    oldProducts.forEach(function(el) {
+        productsEl.removeChild(el);
+    });
+
+    var productsHeader = byId('category_title');
+    productsHeader.classList.add('loading');
+    productsHeader.innerHTML = 'loading&hellip;';
+}
+
+var cancelOldProductLoad = function() {};
 
 function loadProducts(productsURL) {
     cleanProducts();
 
-    if (cancelProductLoad) cancelProductLoad();
+    cancelOldProductLoad();
     var xhr = new XMLHttpRequest();
     xhr.onload = populateProducts;
     xhr.onerror = function() {
@@ -14,19 +30,7 @@ function loadProducts(productsURL) {
     }
     xhr.open("get", productsURL, true, apiKey);
     xhr.send();
-    cancelProductLoad = function() {xhr.abort();}
-}
-
-function cleanProducts() {
-    // empty the current list of products
-    var productsEl = byId('products');
-    [].slice.call(productsEl.querySelectorAll('section.product')).forEach(function(el) {
-        productsEl.removeChild(el);
-    });
-
-    var productsHeader = byId('category_title');
-    productsHeader.classList.add('loading');
-    productsHeader.innerHTML = 'loading&hellip;';
+    cancelOldProductLoad = function() {xhr.abort();}
 }
 
 function populateProducts() {
@@ -42,27 +46,22 @@ function populateProducts() {
         var product = data.products[prodId];
         product.id = prodId;
         var prodFragment = document.importNode(byId('product_template').content, true);
+        var productEl = findEl(prodFragment, 'section');
 
         findEl(prodFragment, '.title').textContent = product.title;
-        findEl(prodFragment, '.price').textContent = product.price;
+        findEl(prodFragment, '.price').textContent = product.price.toFixed(2);
         findEl(prodFragment, '.desc' ).textContent = product.description;
         findEl(prodFragment, '.suppl').textContent = product.supplier;
         findEl(prodFragment, '.stock').textContent = product.stock;
 
+        // save product data in the HTML element
+        productEl.product = product;
+
         if (product.stock > 0) {
-            findEl(prodFragment, 'section').classList.add('available');
-            var cartButton = findEl(prodFragment, '.addtocart');
-            cartButton.product = product;
-            cartButton.onclick = function() {
-                addToCart(this.product);
-            }
+            productEl.classList.add('available');
         }
 
         byId('products').appendChild(prodFragment);
     }
-}
-
-function apiFail() {
-    findEl(document, 'main').innerHTML = "Sorry, the site is temporarily unhappy, please try again later.";
 }
 

@@ -1,8 +1,9 @@
 // functions for loading and showing the list of categories
 
-function loadCategories() {
-    cleanProducts();
+// this file requires the variable `apiKey` to be defined outside
 
+// get a list of categories from the server
+function loadCategories() {
     var xhr = new XMLHttpRequest();
     xhr.onload = populateCategories;
     xhr.onerror = function() {
@@ -13,6 +14,7 @@ function loadCategories() {
     xhr.send();
 }
 
+// when the list of categories is received, put it in the page as tabs
 function populateCategories() {
     if (this.status >= 300) return apiFail();
 
@@ -26,23 +28,31 @@ function populateCategories() {
         var li = document.createElement('li');
         li.textContent = category.title;
         li.dataset.url = category.productsURL;
-        li.onclick = selectCategory;
+        li.onclick = selectCategoryClickHandler;
         categoriesEl.appendChild(li);
     });
 
-    selectCategory({target: categoriesEl.firstChild});
+    selectCategory(categoriesEl.firstChild);
 }
 
-function selectCategory(ev) {
-    var li = ev.target;
+// when a category is clicked, make it "selected"
+function selectCategoryClickHandler(ev) {
+    selectCategory(ev.target);
+}
 
-    var oldLi = findEl(li.parentElement, '.active');
-    if (oldLi) oldLi.classList.remove('active');
+// make a given category "selected"
+function selectCategory(listItem) {
+    var oldActiveItem = findEl(listItem.parentElement, '.active');
+    if (oldActiveItem) oldActiveItem.classList.remove('active');
 
-    li.classList.add('active');
+    listItem.classList.add('active');
 
-    loadProducts(li.dataset.url);
+    // when a category is selected, we'll want to load the products in this category
+    loadProducts(listItem.dataset.url);
 }
 
 
-// todo make API between different JS files into custom events?
+function apiFail() {
+    findEl(document, 'main').innerHTML = "Sorry, the site is temporarily unhappy, please try again later.";
+}
+

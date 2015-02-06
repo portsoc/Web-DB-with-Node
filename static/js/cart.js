@@ -6,7 +6,7 @@ var cart = {};
 var cartPrice = 0;
 var cartCount = 0;
 
-function addToCart(product) {
+function addProductToCart(product) {
     if (product.id in cart) cart[product.id].qty++;
     else cart[product.id] = { product: product.id, qty: 1, price: product.price };
 
@@ -18,29 +18,27 @@ function addToCart(product) {
     findEl(cartEl, '.count').textContent = cartCount.toFixed();
     findEl(cartEl, '.price').textContent = cartPrice.toFixed(2);
     cartEl.classList.remove('empty');
-
-    byId('placeorder').onclick = placeOrder;
 }
 
 function placeOrder() {
-    byId('cart').classList.add('expanded');
-    byId('cart-name').focus();
-    byId('cart-name').onblur = verifyNonEmpty;
-    byId('cart-addr').onblur = verifyNonEmpty;
-    byId('placeorder').onclick = placeOrderVerify;
-}
-
-function verifyNonEmpty() {
-    if (this.value === '') {
-        this.classList.add('error');
+    var cartEl = byId('cart');
+    if (cartEl.classList.contains('expanded')) {
+        if (verifyWholeForm()) submitOrder();
     } else {
-        this.classList.remove('error');
+        cartEl.classList.add('expanded');
+        byId('cart-name').focus();
     }
 }
 
-function placeOrderVerify() {
-    byId('cart').classList.add('expanded');
+function verifyNonEmpty(input) {
+    if (input.value === '') {
+        input.classList.add('error');
+    } else {
+        input.classList.remove('error');
+    }
+}
 
+function verifyWholeForm() {
     var ok = true;
 
     if (byId('cart-addr').value === '') {
@@ -54,23 +52,26 @@ function placeOrderVerify() {
         ok = false;
     }
 
-    if (ok) submitOrder();
+    return ok;
 }
 
 function submitOrder() {
+    // prepare the object for submission
     var order = {
       lines: [],
       address: byId('cart-addr').value,
       buyer: byId('cart-name').value
     }
 
+    // put in the order lines
     for (var key in cart) {
         order.lines.push( cart[key] );
     }
 
+    // disable the button so the user doesn't click it twice
     byId('placeorder').disabled = true;
-    byId('cart').classList.remove('expanded');
 
+    // actually submit the data
     var xhr = new XMLHttpRequest();
     xhr.onload = orderSubmitted;
     xhr.onerror = function() {
@@ -90,14 +91,17 @@ function orderSubmitted() {
 
     clearCart();
 
+    // redirect to the order tracking page
     window.location = "/order?id=" + encodeURIComponent(this.getResponseHeader('location'));
 }
 
 function clearCart() {
-    byId('placeorder').disabled = false;
-    byId('cart').classList.add('empty');
     cart = {};
     cartPrice = 0;
     cartCount = 0;
+
+    byId('cart').classList.remove('expanded');
+    byId('cart').classList.add('empty');
+    byId('placeorder').disabled = false;
 }
 
