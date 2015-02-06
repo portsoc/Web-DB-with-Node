@@ -6,6 +6,11 @@ body {
     background: #adf; 
 }
 
+footer { 
+    display: block;
+    padding-top: 2em;
+}
+
 /* presentation of the list of categories as tabs */
 
 #categories { 
