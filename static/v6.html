@@ -1,0 +1,39 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>HappyOnlineShop</title>
+<link rel="stylesheet" href="css/happystore.css">
+<script src="js/tools.js"></script>
+<script src="js/categories.js"></script>
+<script src="js/products.js"></script>
+
+<h1>Happy Online &#x263a; Shop</h1>
+
+<main>
+    <ul id="categories">
+      <li class='active'>loading&hellip;
+    </ul>
+
+    <section id="products">
+      <h2 id="category_title" class="loading">loading&hellip;</h2>
+
+      <template id="product_template">
+        <section class="product">
+          <h2 class="title"> </h2>
+          <p  class="price"></p>
+          <p  class="desc"></p>
+          <p  class="suppl"></p>
+          <p  class="stock"></p>
+        </section>
+      </template>
+
+    </section>
+</main>
+
+
+
+<script>
+    'use strict';
+    var apiKey = 'orewgthwoetgoirwejgboerigqt';
+
+    document.body.onload = loadCategories;
+</script>
