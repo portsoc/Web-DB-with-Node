@@ -113,6 +113,62 @@ products['phone'] = {
           description: 'not cheap but desirable',
           stock: 137,
           supplier: 'Oranges Pears etc. Ltd'
+        },
+        iph6p: {
+          title: 'flyPhone 6+',
+          price: 125999.90,
+          description: 'honking big, newest and greatest',
+          stock: 29,
+          supplier: 'Oranges Pears etc. Ltd'
+        },
+        abc1: {
+          title: 'example 1',
+          price: 229.90,
+          description: 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',
+          stock: 173,
+          supplier: 'Random Corp.'
+        },
+        abc2: {
+          title: 'example 2',
+          price: 265.90,
+          description: 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',
+          stock: 117,
+          supplier: 'Random Corp.'
+        },
+        abc3: {
+          title: 'example 3',
+          price: 310.90,
+          description: 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',
+          stock: 172,
+          supplier: 'Random Corp.'
+        },
+        abc4: {
+          title: 'example 4',
+          price: 37.90,
+          description: 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',
+          stock: 236,
+          supplier: 'Random Corp.'
+        },
+        abc5: {
+          title: 'example 5',
+          price: 73.90,
+          description: 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',
+          stock: 281,
+          supplier: 'Random Corp.'
+        },
+        abc6: {
+          title: 'example 6',
+          price: 128.90,
+          description: 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',
+          stock: 317,
+          supplier: 'Random Corp.'
+        },
+        abc7: {
+          title: 'example 7',
+          price: 164.90,
+          description: 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',
+          stock: 44,
+          supplier: 'Random Corp.'
         }
       }
     };
