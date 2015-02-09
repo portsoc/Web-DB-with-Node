@@ -130,7 +130,7 @@ function listProducts (req, res, next) {
     simpleSQLQuery({sql: query, nestTables: true}, productsFromSQL, res, next);
 
     function productsFromSQL(results) {
-        if (results.length == 0) throw new WebAppError(404, 'no such category: ' + req.params.id);
+        if (results.length == 0) return next(webappError(404, 'no such category: ' + req.params.id));
 
         var retval = {
             category: results[0].C.name,
@@ -184,7 +184,7 @@ function addOrder(req, res, next) {
             assert(Object.getOwnPropertyNames(priceCheck).length === data.order.lines.length,
                                                                     "order cannot have multiple lines with the same product");
         } catch (e) {
-            return next(new WebAppError(400, 'invalid order: ' + e.message));
+            return next(webappError(400, 'invalid order: ' + e.message));
         }
 
         // now verify that the products exist and have the right prices
@@ -208,7 +208,7 @@ function addOrder(req, res, next) {
             }
 
             if (results[0].c !== expectedCount) {
-                next(new WebAppError(400, 'sorry, prices have changed'));
+                next(webappError(400, 'sorry, prices have changed'));
             } else {
                 storeValidOrder(extractValidOrder(data));
             }
@@ -298,6 +298,7 @@ function addOrder(req, res, next) {
 
 /*
  *  set the given order as dispatched
+ *  this isn't directly used by the API; rather it's currently automatically "faked" a minute after the order is created (unless the server gets restarted)
  */
 function dispatchOrder(orderNo) {
     var query = mysql.format("UPDATE `Order` set dispatched='y' where id=?", orderNo);
@@ -327,7 +328,7 @@ function getOrder(req, res, next) {
 
     function ordersFromSQL(results) {
         if (results.length == 0) {
-            throw new WebAppError(404, 'no such order: ' + req.params.id);
+            return next(webappError(404, 'no such order: ' + req.params.id));
         }
 
         return { order: {
@@ -383,12 +384,15 @@ function simpleSQLQuery(query, dataFunction, expressResponse, next) {
             if (e instanceof WebAppError) {
                 return next(e);
             } else {
-                return next(new WebAppError(500, 'processing error'));
+                throw e;
             }
         }
     });
 }
 
+/*
+ *  error handling helper functions and a class
+ */
 function WebAppError(status, message) {
     Error.call(this);
     this.name = "WebAppError";
@@ -403,6 +407,10 @@ function handleWebAppError(err, req, res, next) {
     next();
 }
 
+function webappError(status, message) {
+    return new WebAppError(status, message);
+}
+
 function databaseError(err) {
     console.log(err);
     return new WebAppError(500, 'database error');
@@ -413,6 +421,9 @@ function rollback(err, next) {
 }
 
 
+/*
+ *  SQL connection handling
+ */
 var sql;
 createMysqlConnection();
 
@@ -420,6 +431,10 @@ function createMysqlConnection() {
     sql = mysql.createConnection({host:'localhost', user:'dbprin', password:'weiothbgdls', database: 'dbprin'});
 }
 
+
+/*
+ *  API key checking
+ */
 function checkApiKey (req, res, next) {
     var creds = auth(req);
     if (!creds || creds.name !== apiKey) {
