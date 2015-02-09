@@ -57,15 +57,15 @@ function verifyWholeForm() {
 
 function submitOrder() {
     // prepare the object for submission
-    var order = {
+    var data = { order: {
       lines: [],
       address: byId('cart-addr').value,
       buyer: byId('cart-name').value
-    }
+    }}
 
     // put in the order lines
     for (var key in cart) {
-        order.lines.push( cart[key] );
+        data.order.lines.push( cart[key] );
     }
 
     // disable the button so the user doesn't click it twice
@@ -80,7 +80,7 @@ function submitOrder() {
     }
     xhr.open("post", '/api/orders/', true, apiKey);
     xhr.setRequestHeader('Content-Type', 'application/json')
-    xhr.send(JSON.stringify(order));
+    xhr.send(JSON.stringify(data));
 }
 
 function orderSubmitted() {

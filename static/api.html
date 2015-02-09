@@ -82,20 +82,22 @@ pre:hover { max-height: 30em; transition: 1s;}
   <h2 id="ords"><code>/api/orders/</code> – the orders</h2>
   <p>Supports HTTP POST to make a new order. Example input (POST body):</p>
   <pre>{
- "lines": [
-  {
-   "product": "leonvo386",
-   "qty": 1,
-   "price": 320
-  },
-  {
-   "product": "gunonp40e",
-   "qty": 1,
-   "price": 599.99
-  }
- ],
- "address": "42 The Matrix",
- "buyer": "Mr Anderson"
+ order: {
+  "lines": [
+   {
+    "product": "leonvo386",
+    "qty": 1,
+    "price": 320
+   },
+   {
+    "product": "gunonp40e",
+    "qty": 1,
+    "price": 599.99
+   }
+  ],
+  "address": "42 The Matrix",
+  "buyer": "Mr Anderson"
+ }
 }</pre>
   <p>On success, the method returns 201 Created, with Loation pointing to the
   URL of the new order resource (described below); the return body contains the newly created
@@ -107,22 +109,24 @@ pre:hover { max-height: 30em; transition: 1s;}
   <p>Supports HTTP GET to retrieve the details of a single order. Example
   output:</p>
   <pre>{
- "lines": [
-  {
-   "product": "leonvo386",
-   "qty": 1,
-   "price": 320
-  },
-  {
-   "product": "gunonp40e",
-   "qty": 1,
-   "price": 599.99
-  }
- ],
- "address": "42 The Matrix",
- "buyer": "Mr Anderson",
- "date": "2015-02-06",
- "dispatched": false
+ order: {
+  "lines": [
+   {
+    "product": "leonvo386",
+    "qty": 1,
+    "price": 320
+   },
+   {
+    "product": "gunonp40e",
+    "qty": 1,
+    "price": 599.99
+   }
+  ],
+  "address": "42 The Matrix",
+  "buyer": "Mr Anderson",
+  "date": "2015-02-06",
+  "dispatched": false
+ }
 }</pre>                          
 </section>
 
