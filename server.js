@@ -61,7 +61,7 @@ app.get('/api/categories', function(req, res) { res.redirect(req.url + '/'); })
 app.get('/api/categories/:id', function(req, res) { res.redirect(req.url + '/'); })
 
 /*
- *  set up main application resources
+ *  set up main application resources, grouped here by URI
  */
 app.get('/api/categories/', listCategories)
 app.post('/api/categories/', addCategory)
@@ -162,7 +162,9 @@ function addProductToCategory(req, res) { notImplemented(req, res); }
 function addOrder(req, res, next) {
     validateOrder(req.body);
 
-    // validation
+    /*
+     *  validation
+     */
     function validateOrder(data) {
         var priceCheck = {};
         var allowedProductIDTypes = { number: true, string: true };
@@ -189,7 +191,9 @@ function addOrder(req, res, next) {
         checkProductsAndPrices(priceCheck, data);
     }
 
-    // asynchronous check that the products exist and the client has the same prices as the database
+    /*
+     *  asynchronous check that the products exist and the client has the same prices as the database
+     */
     function checkProductsAndPrices(prices, data) {
         var query = "SELECT count(*) as c from Product where false";
         var expectedCount = 0;
@@ -212,9 +216,10 @@ function addOrder(req, res, next) {
         });
     }
 
+    /*
+     *  extract only the expected parts of the data structure
+     */
     function extractValidOrder(data) {
-        // price is OK
-        // extract only the expected parts of the data structure
         var validOrder = {
             order: {
                 lines: [],
@@ -233,6 +238,9 @@ function addOrder(req, res, next) {
         return validOrder;
     }
 
+    /*
+     *  the order is validated, let's store it in the database
+     */
     function storeValidOrder(validOrder) {
         validOrder.order.date = new Date();
         validOrder.order.dispatched = false;
