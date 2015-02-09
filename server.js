@@ -417,7 +417,9 @@ function databaseError(err) {
 }
 
 function rollback(err, next) {
-    sql.rollback(function () { return next(databaseError(err)); });
+    // no need to wait for the rollback to execute, call next() right away
+    sql.rollback();
+    next(databaseError(err));
 }
 
 
