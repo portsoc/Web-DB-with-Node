@@ -1,76 +1,99 @@
 /*
- * this is a server and an API for an example database
- * this server is persisted in a MySQL database
+ *  this is a server and an API for an example database
+ *  this server is persisted in a MySQL database
  *
- * author: Jacek Kopecký, jacek@jacek.cz, http://github.com/jacekkopecky
+ *  author: Jacek Kopecký, jacek@jacek.cz, http://github.com/jacekkopecky
  */
 
 'use strict';
 
+/*
+ *  general setup, loading libraries
+ */
+var bodyParser = require('body-parser')
+var auth = require('basic-auth')
+var mysql = require('mysql')
+var assert = require('assert')
 var express = require('express')
-var bodyParser = require('body-parser');
-var auth = require('basic-auth');
-var mysql = require('mysql');
-var assert = require('assert');
-
-
-
-////////////////////////////////////////////////////////////////////
-// set up server and resources
-
 var app = express()
 app.set('strict routing', true)
 
-// this will serve our static files
-app.use(express.static('static', { maxAge: 5*60*1000 /* fiveMinutes */, extensions: [ "html" ] }));
 
-// this will add support for JSON payloads in incoming data
+/*************************************************
+ *
+ *  set up server and resources
+ */
+
+/*
+ *  this will serve our static files
+ */
+app.use(express.static('static', { maxAge: 5*60*1000 /* fiveMinutes */, extensions: [ "html" ] }))
+
+/*
+ *  this will add support for JSON payloads in incoming data
+ */
 app.use(bodyParser.json({limit: 4096}))
 
-// redirect from /api/ to /api which is API documentation
-app.get('/api/', function(req, res) { res.redirect('/api'); });
+/*
+ *  redirect from /api/ to /api which is API documentation
+ */
+app.get('/api/', function(req, res) { res.redirect('/api'); })
 
-// require api key for api calls
-// we want to have an API key to be able to manage the use of our API
-// it's here after setting /api/ so that we don't require the key for /api/
-var apiKey = 'orewgthwoetgoirwejgboerigqt';
-app.use('/api/*', checkApiKey);
+/*
+ *  require api key for api calls
+ *  we want to have an API key to be able to manage the use of our API
+ *  it's here after setting /api/ so that we don't require the key for /api/
+ */
+var apiKey = 'orewgthwoetgoirwejgboerigqt'
+app.use('/api/*', checkApiKey)
 
-// delay every API request by 1s to simulate relatively slow network
-//  app.use('/api/*', function (req, res, next) {
-//      setTimeout(next, 1000);
-//  });
+/*
+ *  delay every API request by 1s to simulate relatively slow network
+ */
+app.use('/api/*', function (req, res, next) {
+    setTimeout(next, 1000)
+})
 
-// setup redirects to URIs with slash at the end so that relative URIs are guaranteed to work
-app.get('/api/categories', function(req, res) { res.redirect(req.url + '/'); });
-app.get('/api/categories/:id', function(req, res) { res.redirect(req.url + '/'); });
+/*
+ *  setup redirects to URIs with slash at the end so that relative URIs are guaranteed to work
+ */
+app.get('/api/categories', function(req, res) { res.redirect(req.url + '/'); })
+app.get('/api/categories/:id', function(req, res) { res.redirect(req.url + '/'); })
 
-// set up main application resources
-app.get('/api/categories/', listCategories);
-app.post('/api/categories/', addCategory);
+/*
+ *  set up main application resources
+ */
+app.get('/api/categories/', listCategories)
+app.post('/api/categories/', addCategory)
 
-app.get('/api/categories/:id/', listProducts);
-app.post('/api/categories/:id/', addProductToCategory);
+app.get('/api/categories/:id/', listProducts)
+app.post('/api/categories/:id/', addProductToCategory)
 
-app.post('/api/orders/', addOrder);
+app.post('/api/orders/', addOrder)
 
-app.get('/api/orders/:id', getOrder);
+app.get('/api/orders/:id', getOrder)
 
-// set up error reporting
-app.use(handleWebAppError);
+/*
+ *  set up error reporting
+ */
+app.use(handleWebAppError)
 
-// start server
-app.listen(8080);
-console.log("server started on port 8080");
+/*
+ *  start server
+ */
+app.listen(8080)
+console.log("server started on port 8080")
 
 
 
-////////////////////////////////////////////////////////////////////
-// actual database and business logic functions
+/*************************************************
+ *
+ *  actual database and business logic functions
+ */
 
-// todo error handling, other refactoring as needed
-
-// list categories
+/*
+ *  list categories
+ */
 function listCategories(req, res, next) {
     var query = 'SELECT id, name FROM Category ORDER BY priority, name';
 
@@ -88,10 +111,14 @@ function listCategories(req, res, next) {
     }
 }
 
-// add a category
+/*
+ *  add a category
+ */
 function addCategory(req, res) { notImplemented(req, res); }
 
-// return products from a category
+/*
+ *  return products from a category
+ */
 function listProducts (req, res, next) {
     var query = mysql.format(
         'SELECT C.name, S.name, P.name, P.price, P.description, P.stock, P.id \
@@ -124,10 +151,14 @@ function listProducts (req, res, next) {
     }
 }
 
-// add a product to a category
+/*
+ *  add a product to a category
+ */
 function addProductToCategory(req, res) { notImplemented(req, res); }
 
-// add an order
+/*
+ *  add an order
+ */
 function addOrder(req, res, next) {
     validateOrder(req.body);
 
@@ -257,7 +288,9 @@ function addOrder(req, res, next) {
     }
 }
 
-// set the given order as dispatched
+/*
+ *  set the given order as dispatched
+ */
 function dispatchOrder(orderNo) {
     var query = mysql.format("UPDATE `Order` set dispatched='y' where id=?", orderNo);
 
@@ -271,7 +304,9 @@ function dispatchOrder(orderNo) {
     });
 }
 
-// retrieve the status of an order
+/*
+ *  retrieve the status of an order
+ */
 function getOrder(req, res, next) {
     var query = mysql.format(
         'SELECT P.id, P.name, L.quantity, L.price, C.name, C.address, O.date, O.dispatched \
@@ -307,21 +342,25 @@ function getOrder(req, res, next) {
 
 
 
-////////////////////////////////////////////////////////////////////
-// helpful functions
+/*************************************************
+ *
+ *  helpful functions
+ */
 
 function notImplemented(req, res) {
     res.status(501).send("this functionality is envisioned but not implemented yet\n");
 }
 
-// runs a SQL query, gives its results to dataFunction, and sends the result back to the client
-// parameters:
-//   query - the SQL query; or an object with more options, see mysql.query()
-//   dataFunction - a function that translates the SQL query results to a Javascript object to be sent to the client
-//   expressResponse - the `res` object on which we should respond to the client
-//   next - in case of an error, this function reports it to express
-//
-// simpleSQLQuery handles errors both from the database or thrown by the dataFunction
+/*
+ *  runs a SQL query, gives its results to dataFunction, and sends the result back to the client
+ *  parameters:
+ *    query - the SQL query; or an object with more options, see mysql.query()
+ *    dataFunction - a function that translates the SQL query results to a Javascript object to be sent to the client
+ *    expressResponse - the `res` object on which we should respond to the client
+ *    next - in case of an error, this function reports it to express
+ *
+ *  simpleSQLQuery handles errors both from the database or thrown by the dataFunction
+ */
 
 function simpleSQLQuery(query, dataFunction, expressResponse, next) {
     sql.query(query, function(err, results) {
@@ -385,8 +424,8 @@ function checkApiKey (req, res, next) {
 
 
 
-/////////////////////////////////////////////////////////////////////////////////
-/*  database setup in MySQL:
+/*************************************************
+    database setup in MySQL:
 
     CREATE USER dbprin@localhost identified by 'weiothbgdls';
     CREATE DATABASE dbprin;
