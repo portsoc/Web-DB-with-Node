@@ -265,7 +265,7 @@ app.post('/api/orders/', function(req, res) {
 
 app.get('/api/orders/:id', function(req, res) {
     if (!(req.params.id in orders)) res.status(404).send('no such order: ' + req.params.id + '\n');
-    res.send(orders[req.params.id]);
+    res.send({order: orders[req.params.id]});
 });
 
 // rate limiting, validation, authorization
