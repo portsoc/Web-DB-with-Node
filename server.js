@@ -25,7 +25,8 @@ app.set('strict routing', true)
 /*************************************************
  *
  *  set up server and resources
- */
+ *
+ *************************************************/
 
 /*
  *  this will serve our static files
@@ -93,7 +94,8 @@ console.log("server started on port " + config.port)
 /*************************************************
  *
  *  actual database and business logic functions
- */
+ *
+ *************************************************/
 
 /*
  *  list categories
@@ -124,7 +126,7 @@ function addCategory(req, res) { notImplemented(req, res); }
  *  return products from a category
  */
 function listProducts (req, res, next) {
-    var query = mysql.format(
+    var query = sql.format(
         'SELECT C.name, S.name, P.name, P.price, P.description, P.stock, P.id \
          FROM Category C, Product P, Supplier S \
          WHERE C.id = ? and P.category = ? and S.id = P.supplier \
@@ -356,7 +358,8 @@ function getOrder(req, res, next) {
 /*************************************************
  *
  *  helpful functions
- */
+ *
+ *************************************************/
 
 function notImplemented(req, res) {
     res.status(501).send("this functionality is envisioned but not implemented yet\n");
