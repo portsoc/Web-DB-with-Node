@@ -204,7 +204,7 @@ function addOrder(req, res, next) {
         var query = "SELECT count(*) as c from Product where false";
         var expectedCount = 0;
         for (var id in prices) {
-            query += ' or (id=' + mysql.escape(id) + ' and price=' + prices[id].toFixed(2) + ')';
+            query += ' or (id=' + sql.escape(id) + ' and price=' + prices[id].toFixed(2) + ')';
             expectedCount++;
         }
 
@@ -256,11 +256,11 @@ function addOrder(req, res, next) {
         // insert order
         // insert all the lines
 
-        var queryInsertCustomer = mysql.format(
+        var queryInsertCustomer = sql.format(
             'INSERT INTO Customer SET ? on duplicate key update id=last_insert_id(id);',
             { name: validOrder.order.buyer, address: validOrder.order.address });
 
-        var queryInsertOrder = mysql.format(
+        var queryInsertOrder = sql.format(
             'INSERT INTO `Order` SET customer = last_insert_id(), ?',
             { date: validOrder.order.date, dispatched: validOrder.order.dispatched ? 'y' : 'n' });
 
@@ -268,9 +268,9 @@ function addOrder(req, res, next) {
         validOrder.order.lines.forEach(function (line, idx) {
             if (idx) queryInsertLines += ', ';
             queryInsertLines += '( last_insert_id(), ';
-            queryInsertLines += mysql.escape(line.product) + ', ';
-            queryInsertLines += mysql.escape(line.qty) + ', ';
-            queryInsertLines += mysql.escape(line.price) + ')';
+            queryInsertLines += sql.escape(line.product) + ', ';
+            queryInsertLines += sql.escape(line.qty) + ', ';
+            queryInsertLines += sql.escape(line.price) + ')';
         });
 
         sql.beginTransaction(function (err) {
@@ -307,7 +307,7 @@ function addOrder(req, res, next) {
  *  this isn't directly used by the API; rather it's currently automatically "faked" a minute after the order is created (unless the server gets restarted)
  */
 function dispatchOrder(orderNo) {
-    var query = mysql.format("UPDATE `Order` set dispatched='y' where id=?", orderNo);
+    var query = sql.format("UPDATE `Order` set dispatched='y' where id=?", orderNo);
 
     sql.query(query, function(err, results) {
         if (err) {
@@ -323,7 +323,7 @@ function dispatchOrder(orderNo) {
  *  retrieve the status of an order
  */
 function getOrder(req, res, next) {
-    var query = mysql.format(
+    var query = sql.format(
         'SELECT P.id, P.name, L.quantity, L.price, C.name, C.address, O.date, O.dispatched \
          FROM Customer C, Product P, `Order` O, OrderLine L \
          WHERE O.id = ? and L.`order` = ? and C.id = O.customer and L.product = P.id \
