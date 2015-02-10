@@ -1,12 +1,16 @@
 {
-  "name": "DBPRIN-node-example",
-  "description": "an example server and API for a database app",
-  "version": "0.0.1",
-  "private": true,
-  "dependencies": {
-    "express": "4.x",
-    "body-parser": "1.x.x",
-    "basic-auth": "1.x.x",
-    "mysql": "2.5.x"
-  }
+    "name": "DBPRIN-node-example",
+    "description": "an example server and API for a database app",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+      "express": "4.x",
+      "body-parser": "1.x.x",
+      "basic-auth": "1.x.x",
+      "mysql": "2.5.x"
+    },
+    "jshintConfig": {
+        "asi": true,
+        "multistr": true
+    }
 }

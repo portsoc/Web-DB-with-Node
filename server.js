@@ -5,17 +5,20 @@
  *  author: Jacek Kopecký, jacek@jacek.cz, http://github.com/jacekkopecky
  */
 
+/*jslint node:true*/
 'use strict';
 
 /*
  *  general setup, loading libraries
  */
-var bodyParser = require('body-parser')
-var auth = require('basic-auth')
-var mysql = require('mysql')
-var assert = require('assert')
-var express = require('express')
-var app = express()
+var bodyParser = require('body-parser'),
+    auth = require('basic-auth'),
+    mysql = require('mysql'),
+    assert = require('assert'),
+    express = require('express'),
+    config = require('./config.js'),
+    app = express()
+
 app.set('strict routing', true)
 
 
@@ -27,12 +30,12 @@ app.set('strict routing', true)
 /*
  *  this will serve our static files
  */
-app.use(express.static('static', { maxAge: 5*60*1000 /* fiveMinutes */, extensions: [ "html" ] }))
+app.use(express.static('static', config.expressStatic))
 
 /*
  *  this will add support for JSON payloads in incoming data
  */
-app.use(bodyParser.json({limit: 4096}))
+app.use(bodyParser.json(config.bodyParser_JSON))
 
 /*
  *  redirect from /api/ to /api which is API documentation
@@ -44,15 +47,16 @@ app.get('/api/', function(req, res) { res.redirect('/api'); })
  *  we want to have an API key to be able to manage the use of our API
  *  it's here after setting /api/ so that we don't require the key for /api/
  */
-var apiKey = 'orewgthwoetgoirwejgboerigqt'
 app.use('/api/*', checkApiKey)
 
 /*
  *  delay every API request by 1s to simulate relatively slow network
  */
-app.use('/api/*', function (req, res, next) {
-    setTimeout(next, 1000)
-})
+if (config.apiCallDelay) {
+    app.use('/api/*', function (req, res, next) {
+        setTimeout(next, config.apiCallDelay)
+    })
+}
 
 /*
  *  setup redirects to URIs with slash at the end so that relative URIs are guaranteed to work
@@ -81,8 +85,8 @@ app.use(handleWebAppError)
 /*
  *  start server
  */
-app.listen(8080)
-console.log("server started on port 8080")
+app.listen(config.port)
+console.log("server started on port " + config.port)
 
 
 
@@ -130,7 +134,7 @@ function listProducts (req, res, next) {
     simpleSQLQuery({sql: query, nestTables: true}, productsFromSQL, res, next);
 
     function productsFromSQL(results) {
-        if (results.length == 0) return next(webappError(404, 'no such category: ' + req.params.id));
+        if (results.length === 0) return next(webappError(404, 'no such category: ' + req.params.id));
 
         var retval = {
             category: results[0].C.name,
@@ -327,9 +331,7 @@ function getOrder(req, res, next) {
     simpleSQLQuery({sql: query, nestTables: true}, ordersFromSQL, res, next);
 
     function ordersFromSQL(results) {
-        if (results.length == 0) {
-            return next(webappError(404, 'no such order: ' + req.params.id));
-        }
+        if (results.length === 0) return next(webappError(404, 'no such order: ' + req.params.id));
 
         return { order: {
             buyer: results[0].C.name,
@@ -413,6 +415,7 @@ function webappError(status, message) {
 
 function databaseError(err) {
     console.log(err);
+    if (err.fatal) reconnectMysqlConnection();
     return new WebAppError(500, 'database error');
 }
 
@@ -430,7 +433,15 @@ var sql;
 createMysqlConnection();
 
 function createMysqlConnection() {
-    sql = mysql.createConnection({host:'localhost', user:'dbprin', password:'weiothbgdls', database: 'dbprin'});
+    sql = mysql.createConnection(config.mysql);
+    sql.on('error', function() {
+      reconnectMysqlConnection();
+    })
+}
+
+function reconnectMysqlConnection() {
+    console.log('sql error, trying to reconnect');
+    setTimeout(createMysqlConnection, 1000);
 }
 
 
@@ -439,125 +450,9 @@ function createMysqlConnection() {
  */
 function checkApiKey (req, res, next) {
     var creds = auth(req);
-    if (!creds || creds.name !== apiKey) {
+    if (!creds || creds.name !== config.apiKey) {
         res.set('WWW-Authenticate', 'Basic realm=API Key required');
         return res.status(401).send('API Key required');
     }
     next();
 }
-
-
-
-
-/*************************************************
-    database setup in MySQL:
-
-    CREATE USER dbprin@localhost identified by 'weiothbgdls';
-    CREATE DATABASE dbprin;
-    GRANT SELECT, INSERT, UPDATE ON dbprin.* to dbprin@localhost;
-    USE dbprin;
-
-    DROP TABLE IF EXISTS OrderLine;
-    DROP TABLE IF EXISTS `Order`;
-    DROP TABLE IF EXISTS Customer;
-    DROP TABLE IF EXISTS Product;
-    DROP TABLE IF EXISTS Supplier;
-    DROP TABLE IF EXISTS Category;
-
-    CREATE TABLE IF NOT EXISTS Category (
-        id       varchar(8)  primary key,
-        name     varchar(20) not null,
-        priority double      not null unique,
-        key(priority, name) -- so that we can order by the index
-    ) engine=InnoDB;
-
-    CREATE TABLE IF NOT EXISTS Supplier (
-        id   int         primary key auto_increment,
-        name varchar(30) not null
-        -- probably also some contact details but that's not necessary in the demo
-    ) engine=InnoDB;
-
-    CREATE TABLE IF NOT EXISTS Product (
-        id          int                 primary key auto_increment,
-        name        varchar(30)         not null,
-        price       decimal(8,2)        not null,
-        description text,
-        stock       mediumint unsigned  not null default 0,
-        category    varchar(8)          not null,
-        constraint foreign key (category) references Category(id),
-        supplier    int,
-        constraint foreign key (supplier) references Supplier(id)
-    ) engine=InnoDB;
-
-    CREATE TABLE IF NOT EXISTS Customer (
-        id      int          primary key auto_increment,
-        name    varchar(40)  not null,
-        address varchar(200) not null,
-        unique key (name, address)
-    ) engine=InnoDB;
-
-    CREATE TABLE IF NOT EXISTS `Order` (
-        id         int           primary key auto_increment,
-        customer   int           not null,
-        constraint foreign key (customer) references Customer(id),
-        date       datetime      not null default now(),
-        dispatched enum('y','n') not null default 'n'
-    ) engine=InnoDB;
-
-    CREATE TABLE IF NOT EXISTS OrderLine (
-        primary key (`order`, product),
-        `order`  int,
-        constraint foreign key (`order`) references `Order`(id),
-        product  int,
-        constraint foreign key (product) references Product(id),
-        quantity mediumint unsigned not null,
-        price    decimal(8,2)       not null
-    ) engine=InnoDB;
-
-
-
-
-    -- sample data
-
-    INSERT INTO Category (id, name, priority) VALUES
-        ('cam', 'Cameras', 1), ('phone', 'Phones', 2), ('laptop', 'Laptops', 3);
-
-    INSERT INTO Supplier(id, name) VALUES
-        (1, 'Nixon Specialists Inc.'),
-        (2, 'BigShop Inc.'),
-        (3, 'Kaboodle Inc.'),
-        (4, 'Oranges Pears etc. Ltd'),
-        (5, 'Random Corp.');
-
-    INSERT INTO Product(id, name, price, description, stock, category, supplier) VALUES
-        (1, 'Nixon 123X',         123.45, 'A basic camera, 12.3MPix',                                    14, 'cam',    1),
-        (2, 'Gunon P40E',         580.99, 'Body (no lenses), 40MPix',                                     2, 'cam',    2),
-        (3, 'Gunon P30E',         399.99, 'Body (no lenses), 30MPix, discontinued',                       0, 'cam',    2),
-        (4, 'Ace 4040',           349.99, '15" hi-res hi-perf with Windows',                              1, 'laptop', 2),
-        (5, 'Leonvo Classic 386', 299.99, '13.3" flexible with Doors',                                   73, 'laptop', 2),
-        (6, 'Lexus 1',            219.99, 'discontinued',                                                 0, 'phone',  3),
-        (7, 'Lexus 5',            299.99, 'better, almost discontinued',                                  7, 'phone',  3),
-        (8, 'flyPhone 6',        7399.90, 'not cheap but desirable',                                    137, 'phone',  4),
-        (9, 'flyPhone 6+',     125999.90, 'honking big, newest and greatest',                            29, 'phone',  4),
-        (10, 'example 1',         229.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks', 173, 'phone',  5),
-        (11, 'example 2',         265.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks', 117, 'phone',  5),
-        (12, 'example 3',         310.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks', 172, 'phone',  5),
-        (13, 'example 4',          37.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks', 236, 'phone',  5),
-        (14, 'example 5',          73.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks', 281, 'phone',  5),
-        (15, 'example 6',         128.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks', 317, 'phone',  5),
-        (16, 'example 7',         164.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',  44, 'phone',  5);
-
-    INSERT INTO Customer (id, name, address) VALUES
-        (1, 'Mr Anderson', '42 The Matrix'),
-        (2, 'Ms Munchkin', '1 Yellow Brick Road, Ozshire');
-
-    INSERT INTO `Order` (id, customer) VALUES
-        (1, 1),
-        (2, 2);
-
-    INSERT INTO OrderLine (`order`, product, quantity, price) VALUES
-        (1, 5, 1, 320),
-        (1, 2, 1, 599.99),
-        (2, 5, 2, 310);
-
- */
