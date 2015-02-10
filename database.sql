@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `Order` (
     id         int           primary key auto_increment,
     customer   int           not null,
     constraint foreign key (customer) references Customer(id),
-    date       datetime      not null default now(),
+    date       datetime      not null, -- default now(),
     dispatched enum('y','n') not null default 'n'
 ) engine=InnoDB;
 
@@ -99,9 +99,9 @@ INSERT INTO Customer (id, name, address) VALUES
     (1, 'Mr Anderson', '42 The Matrix'),
     (2, 'Ms Munchkin', '1 Yellow Brick Road, Ozshire');
 
-INSERT INTO `Order` (id, customer) VALUES
-    (1, 1),
-    (2, 2);
+INSERT INTO `Order` (id, customer, date) VALUES
+    (1, 1, now()),
+    (2, 2, now());
 
 INSERT INTO OrderLine (`order`, product, quantity, price) VALUES
     (1, 5, 1, 320),
