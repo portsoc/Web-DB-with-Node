@@ -109,26 +109,27 @@ pre:hover { max-height: 30em; transition: 1s;}
   <p>Supports HTTP GET to retrieve the details of a single order. Example
   output:</p>
   <pre>{
- order: {
+ "order": {
+  "buyer": "Mr Anderson",
+  "address": "42 The Matrix",
+  "date": "2015-02-10T16:22:20.000Z",
+  "dispatched": "n",
   "lines": [
    {
-    "product": "leonvo386",
-    "qty": 1,
-    "price": 320
+    "product": 2,
+    "title": "Gunon P40E",
+    "price": 599.99000000000001,
+    "qty": 1
    },
    {
-    "product": "gunonp40e",
-    "qty": 1,
-    "price": 599.99
+    "product": 5,
+    "title": "Leonvo Classic 386",
+    "price": 320,
+    "qty": 1
    }
-  ],
-  "address": "42 The Matrix",
-  "buyer": "Mr Anderson",
-  "date": "2015-02-06",
-  "dispatched": false
+  ]
  }
-}</pre>                          
+}</pre>
 </section>
 
 </article>
-
