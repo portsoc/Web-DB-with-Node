@@ -60,12 +60,6 @@ if (config.apiCallDelay) {
 }
 
 /*
- *  setup redirects to URIs with slash at the end so that relative URIs are guaranteed to work
- */
-app.get('/api/categories', function(req, res) { res.redirect(req.url + '/'); })
-app.get('/api/categories/:id', function(req, res) { res.redirect(req.url + '/'); })
-
-/*
  *  set up main application resources, grouped here by URI
  */
 app.get('/api/categories/', listCategories)
@@ -77,6 +71,12 @@ app.post('/api/categories/:id/', addProductToCategory)
 app.post('/api/orders/', addOrder)
 
 app.get('/api/orders/:id', getOrder)
+
+/*
+ *  setup redirects to URIs with slash at the end so that relative URIs are guaranteed to work
+ */
+app.get('/api/categories', function(req, res) { res.redirect(req.url + '/'); })
+app.get('/api/categories/:id', function(req, res) { res.redirect(req.url + '/'); })
 
 /*
  *  set up error reporting
@@ -128,10 +128,12 @@ function addCategory(req, res) { notImplemented(req, res); }
 function listProducts (req, res, next) {
     var query = sql.format(
         'SELECT C.name, S.name, P.name, P.price, P.description, P.stock, P.id \
-         FROM Category C, Product P, Supplier S \
-         WHERE C.id = ? and P.category = ? and S.id = P.supplier \
+         FROM Category C \
+         JOIN Product P on C.id = P.category \
+         JOIN Supplier S on S.id = P.supplier \
+         WHERE P.category = ? \
          ORDER BY P.name',
-        [req.params.id, req.params.id]);
+        req.params.id);
 
     simpleSQLQuery({sql: query, nestTables: true}, productsFromSQL, res, next);
 
@@ -172,8 +174,8 @@ function addOrder(req, res, next) {
      *  validation
      */
     function validateOrder(data) {
-        var priceCheck = {};
         var allowedProductIDTypes = { number: true, string: true };
+        var priceCheck = {}; // this will be a hash-table of products and their prices, used for checking the prices
         try {
             assert('order' in data,                                 "order data missing top-level 'order'")
             assert(Array.isArray(data.order.lines),                 "order missing 'lines' array");
@@ -201,17 +203,24 @@ function addOrder(req, res, next) {
      *  asynchronous check that the products exist and the client has the same prices as the database
      */
     function checkProductsAndPrices(prices, data) {
-        var query = "SELECT count(*) as c from Product where false";
+        var query = "SELECT count(*) AS c FROM Product WHERE false";
         var expectedCount = 0;
         for (var id in prices) {
-            query += ' or (id=' + sql.escape(id) + ' and price=' + prices[id].toFixed(2) + ')';
+            query += ' OR (id=' + sql.escape(id) + ' AND price=' + prices[id].toFixed(2) + ')';
             expectedCount++;
         }
 
+        // the above makes a query like this:
+        //     SELECT count(*) AS c
+        //     FROM Product
+        //     WHERE false
+        //        OR (id='4' AND price=349.99)
+        //        OR (id='5' AND price=299.99)
+        // which will return every product mentioned in the order, but only if the price matches our data
+        // therefore, if we get fewer products than expected, some product ID doesn't exist or its price is not right
+
         sql.query(query, function(err, results) {
-            if (err) {
-                return next(databaseError(err));
-            }
+            if (err) return next(databaseError(err));
 
             if (results[0].c !== expectedCount) {
                 next(webappError(400, 'sorry, prices have changed'));
@@ -224,6 +233,7 @@ function addOrder(req, res, next) {
 
     /*
      *  extract only the expected parts of the data structure
+     *  this function effectively ignores data that's unexpected in the incoming order
      */
     function extractValidOrder(data) {
         var validOrder = {
@@ -275,12 +285,16 @@ function addOrder(req, res, next) {
 
         sql.beginTransaction(function (err) {
             if (err) return next(databaseError(err));
+
             sql.query(queryInsertCustomer, function (err) {
                 if (err) return rollback(err, next);
+
                 sql.query(queryInsertOrder, function (err, insertOrderResults) {
                     if (err) return rollback(err, next);
+
                     sql.query(queryInsertLines, function (err) {
                         if (err) return rollback(err, next);
+
                         sql.commit(function (err) {
                             if (err) return rollback(err, next);
 
@@ -378,9 +392,7 @@ function notImplemented(req, res) {
 
 function simpleSQLQuery(query, dataFunction, expressResponse, next) {
     sql.query(query, function(err, results) {
-        if (err) {
-            return next(databaseError(err));
-        }
+        if (err) return next(databaseError(err));
 
         try {
             var data = dataFunction(results);

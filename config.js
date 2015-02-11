@@ -1,5 +1,4 @@
 module.exports = {
-    apiCallDelay: 100,
     apiKey: 'orewgthwoetgoirwejgboerigqt',
     mysql: {
         host:'localhost',
@@ -14,5 +13,6 @@ module.exports = {
     bodyParser_JSON: {
         limit: 4096
     },
-    port: process.env.PORT || 8080
+    port: process.env.PORT || 8080,
+    apiCallDelay: 1000
 }
