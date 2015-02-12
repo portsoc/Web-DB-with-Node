@@ -1,7 +1,7 @@
 // functions for loading and showing an order
 
 function loadOrder() {
-    var orderURI = getParameterByName('id');
+    var orderURI = '/api/orders/' + encodeURIComponent(getParameterByName('id'));
     if (orderURI === '') {
         byId('order').textContent = "no order specified";
         return;
@@ -27,4 +27,3 @@ function populateOrderData() {
 function apiFail() {
     byId('order').textContent = "error loading order " + getParameterByName('id');
 }
-

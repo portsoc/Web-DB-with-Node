@@ -300,6 +300,7 @@ function addOrder(req, res, next) {
 
                             // all the queries have gone through, in a transaction
                             var orderNo = insertOrderResults.insertId;
+                            validOrder.order.id = orderNo;
                             var orderURL = '/api/orders/' + orderNo;
                             res.set('Content-Location', orderURL);
                             res.location(orderURL).status(201).send(validOrder);
@@ -339,10 +340,13 @@ function dispatchOrder(orderNo) {
 function getOrder(req, res, next) {
     var query = sql.format(
         'SELECT P.id, P.name, L.quantity, L.price, C.name, C.address, O.date, O.dispatched \
-         FROM Customer C, Product P, `Order` O, OrderLine L \
-         WHERE O.id = ? and L.`order` = ? and C.id = O.customer and L.product = P.id \
+         FROM Customer C \
+         JOIN `Order` O ON C.id = O.customer \
+         JOIN OrderLine L ON L.`order` = O.id \
+         JOIN Product P ON L.product = P.id \
+         WHERE O.id = ? \
          ORDER BY P.name',
-        [req.params.id, req.params.id]);
+        req.params.id);
 
     simpleSQLQuery({sql: query, nestTables: true}, ordersFromSQL, res, next);
 
@@ -354,6 +358,7 @@ function getOrder(req, res, next) {
             address: results[0].C.address,
             date: results[0].O.date,
             dispatched: results[0].O.dispatched,
+            id: req.params.id,
             lines: results.map(function (row) {
                 return {
                     product: row.P.id,

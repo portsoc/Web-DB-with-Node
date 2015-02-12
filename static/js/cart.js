@@ -91,8 +91,17 @@ function orderSubmitted() {
 
     clearCart();
 
-    // redirect to the order tracking page
-    window.location = "/order?id=" + encodeURIComponent(this.getResponseHeader('location'));
+    try {
+        // parse order, get its ID
+        var data = JSON.parse(this.responseText);
+        var orderId = data.order.id;
+        
+        // redirect to the order tracking page
+        window.location = "/order?id=" + encodeURIComponent(orderId);
+    } catch (err) {
+        console.log("order submitted but not returned as expected");
+        return apiFail();
+    }
 }
 
 function clearCart() {
@@ -104,4 +113,3 @@ function clearCart() {
     byId('cart').classList.add('empty');
     byId('placeorder').disabled = false;
 }
-
