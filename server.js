@@ -19,14 +19,18 @@ var bodyParser = require('body-parser'),
     config = require('./config.js'),
     app = express()
 
-app.set('strict routing', true)
 
 
 /*************************************************
  *
- *  set up server and resources
+ *  set up server options and resources
  *
  *************************************************/
+
+/*
+ *  by default, express.js treats resource paths like "/foo" and "/foo/" as the same, we don't want that
+ */
+app.set('strict routing', true)
 
 /*
  *  this will serve our static files
@@ -39,7 +43,7 @@ app.use(express.static('static', config.expressStatic))
 app.use(bodyParser.json(config.bodyParser_JSON))
 
 /*
- *  redirect from /api/ to /api which is API documentation
+ *  redirect from /api/ to /api which is actually static/api.html - the API documentation
  */
 app.get('/api/', function(req, res) { res.redirect('/api'); })
 
@@ -51,7 +55,7 @@ app.get('/api/', function(req, res) { res.redirect('/api'); })
 app.use('/api/*', checkApiKey)
 
 /*
- *  delay every API request by 1s to simulate relatively slow network
+ *  delay every API request by 1s (or whatever config.js says) to simulate relatively slow network
  */
 if (config.apiCallDelay) {
     app.use('/api/*', function (req, res, next) {
@@ -62,21 +66,24 @@ if (config.apiCallDelay) {
 /*
  *  set up main application resources, grouped here by URI
  */
-app.get('/api/categories/', listCategories)
-app.post('/api/categories/', addCategory)
+app.get('/api/categories/',      listCategories)
+app.post('/api/categories/',     addCategory)
 
-app.get('/api/categories/:id/', listProducts)
+app.get('/api/categories/:id/',  listProducts)
 app.post('/api/categories/:id/', addProductToCategory)
 
-app.post('/api/orders/', addOrder)
+app.post('/api/orders/',         addOrder)
 
-app.get('/api/orders/:id', getOrder)
+app.get('/api/orders/:id/',      getOrder)
 
 /*
- *  setup redirects to URIs with slash at the end so that relative URIs are guaranteed to work
+ *  setup redirects to URIs with slash at the end so that relative URIs work better
  */
-app.get('/api/categories', function(req, res) { res.redirect(req.url + '/'); })
-app.get('/api/categories/:id', function(req, res) { res.redirect(req.url + '/'); })
+app.get('/api/categories',       redirectToSlash)
+app.get('/api/categories/:id',   redirectToSlash)
+app.get('/api/orders/:id',       redirectToSlash)
+
+function redirectToSlash(req, res) { res.redirect(req.url + '/'); }
 
 /*
  *  set up error reporting
@@ -99,6 +106,23 @@ console.log("server started on port " + config.port)
 
 /*
  *  list categories
+ *  returns something like this:
+ *  {
+ *    "categories": [
+ *      {
+ *        "title": "Cameras",
+ *        "productsURL": "/api/categories/cam/"
+ *      },
+ *      {
+ *        "title": "Phones",
+ *        "productsURL": "/api/categories/phone/"
+ *      },
+ *      {
+ *        "title": "Laptops",
+ *        "productsURL": "/api/categories/laptop/"
+ *      }
+ *    ]
+ *  }
  */
 function listCategories(req, res, next) {
     var query = 'SELECT id, name FROM Category ORDER BY priority, name';
@@ -106,13 +130,14 @@ function listCategories(req, res, next) {
     simpleSQLQuery(query, categoriesFromSQL, res, next);
 
     function categoriesFromSQL(results) {
+        var categories = results.map(function (row) {
+            return {
+                "title": row.name,
+                "productsURL": '/api/categories/' + row.id + '/'
+            }
+        })
         return {
-            categories: results.map(function (row) {
-                return {
-                    title: row.name,
-                    productsURL: '/api/categories/' + row.id + '/'
-                }
-            })
+            "categories": categories
         }
     }
 }
@@ -123,7 +148,34 @@ function listCategories(req, res, next) {
 function addCategory(req, res) { notImplemented(req, res); }
 
 /*
- *  return products from a category
+ *  list products from a category
+ *  returns something like this:
+ *  {
+ *    "category": "Cameras",
+ *    "products": {
+ *      "1": {
+ *        "title": "Nixon 123X",
+ *        "price": 123.45,
+ *        "description": "A basic camera, 12.3MPix",
+ *        "stock": 14,
+ *        "supplier": "Nixon Specialists Inc."
+ *      },
+ *      "2": {
+ *        "title": "Gunon P40E",
+ *        "price": 580.99,
+ *        "description": "Body (no lenses), 40MPix",
+ *        "stock": 2,
+ *        "supplier": "BigShop Inc."
+ *      },
+ *      "3": {
+ *        "title": "Gunon P30E",
+ *        "price": 399.99,
+ *        "description": "Body (no lenses), 30MPix, discontinued",
+ *        "stock": 0,
+ *        "supplier": "BigShop Inc."
+ *      }
+ *    }
+ *  }
  */
 function listProducts (req, res, next) {
     var query = sql.format(
@@ -140,13 +192,13 @@ function listProducts (req, res, next) {
     function productsFromSQL(results) {
         if (results.length === 0) return next(webappError(404, 'no such category: ' + req.params.id));
 
-        var retval = {
+        var products = {
             category: results[0].C.name,
             products: {}
         }
 
         results.forEach(function (row) {
-            retval.products[row.P.id] = {
+            products.products[row.P.id] = {
                 title: row.P.name,
                 price: row.P.price,
                 description: row.P.description,
@@ -155,7 +207,7 @@ function listProducts (req, res, next) {
             }
         })
 
-        return retval;
+        return products;
     }
 }
 
@@ -166,12 +218,34 @@ function addProductToCategory(req, res) { notImplemented(req, res); }
 
 /*
  *  add an order
+ *  accepts something like this:
+ *  {
+ *    "order": {
+ *      "buyer": "john",
+ *      "address": "portsmouth",
+ *      "lines": [
+ *        {
+ *          "product": 2,
+ *          "title": "Gunon P40E",
+ *          "price": 580.99,
+ *          "qty": 2
+ *        },
+ *        {
+ *          "product": 1,
+ *          "title": "Nixon 123X",
+ *          "price": 123.45,
+ *          "qty": 1
+ *        }
+ *      ]
+ *    }
+ *  }
+ *  returns the same thing with extra "date", "dispatched" and "id" properties of the "order" object
  */
 function addOrder(req, res, next) {
     validateOrder(req.body);
 
     /*
-     *  validation
+     *  validation that all the required properties are there
      */
     function validateOrder(data) {
         var allowedProductIDTypes = { number: true, string: true };
@@ -216,6 +290,7 @@ function addOrder(req, res, next) {
         //     WHERE false
         //        OR (id='4' AND price=349.99)
         //        OR (id='5' AND price=299.99)
+        //
         // which will return every product mentioned in the order, but only if the price matches our data
         // therefore, if we get fewer products than expected, some product ID doesn't exist or its price is not right
 
@@ -223,7 +298,7 @@ function addOrder(req, res, next) {
             if (err) return next(databaseError(err));
 
             if (results[0].c !== expectedCount) {
-                next(webappError(400, 'sorry, prices have changed'));
+                return next(webappError(400, 'sorry, prices have changed'));
             } else {
                 storeValidOrder(extractValidOrder(data));
             }
@@ -258,6 +333,7 @@ function addOrder(req, res, next) {
      *  the order is validated, let's store it in the database
      */
     function storeValidOrder(validOrder) {
+        // fill in date and dispatch status
         validOrder.order.date = new Date();
         validOrder.order.dispatched = false;
 
@@ -267,12 +343,21 @@ function addOrder(req, res, next) {
         // insert all the lines
 
         var queryInsertCustomer = sql.format(
-            'INSERT INTO Customer SET ? on duplicate key update id=last_insert_id(id);',
+            'INSERT INTO Customer SET ? ON DUPLICATE KEY UPDATE id=last_insert_id(id);',
             { name: validOrder.order.buyer, address: validOrder.order.address });
+
+        // the above gives a query like
+        // INSERT INTO Customer
+        // SET `name` = 'john', `address` = 'portsmouth'
+        // ON DUPLICATE KEY UPDATE id=last_insert_id(id);
 
         var queryInsertOrder = sql.format(
             'INSERT INTO `Order` SET customer = last_insert_id(), ?',
             { date: validOrder.order.date, dispatched: validOrder.order.dispatched ? 'y' : 'n' });
+
+        // the above gives a query like
+        // INSERT INTO `Order`
+        // SET customer = last_insert_id(), `date` = '2015-02-12 16:12:55.414', `dispatched` = 'n'
 
         var queryInsertLines = 'INSERT INTO OrderLine (`order`, product, quantity, price) VALUES ';
         validOrder.order.lines.forEach(function (line, idx) {
@@ -282,6 +367,15 @@ function addOrder(req, res, next) {
             queryInsertLines += sql.escape(line.qty) + ', ';
             queryInsertLines += sql.escape(line.price) + ')';
         });
+
+        // the above gives a query like
+        // INSERT INTO OrderLine (`order`, product, quantity, price)
+        // VALUES ( last_insert_id(), '1', 1, 123.45),
+        //        ( last_insert_id(), '2', 2, 580.99)
+
+        // below, we use transactions here to make sure that either the above queries run successfully,
+        // or none of them run at all
+        // the statements are nested because each should only run if the preceding one succeeded
 
         sql.beginTransaction(function (err) {
             if (err) return next(databaseError(err));
@@ -298,16 +392,18 @@ function addOrder(req, res, next) {
                         sql.commit(function (err) {
                             if (err) return rollback(err, next);
 
-                            // all the queries have gone through, in a transaction
+                            // all the queries have gone through and are committed,
+                            // so now return the complete order
+
                             var orderNo = insertOrderResults.insertId;
                             validOrder.order.id = orderNo;
-                            var orderURL = '/api/orders/' + orderNo;
+                            var orderURL = '/api/orders/' + orderNo + '/';
                             res.set('Content-Location', orderURL);
                             res.location(orderURL).status(201).send(validOrder);
 
                             console.log("received order " + orderNo);
 
-                            // dispatch the order in a minute
+                            // schedule to dispatch the order in a minute
                             setTimeout(dispatchOrder, 60000, orderNo);
                         });
                     });
@@ -336,6 +432,30 @@ function dispatchOrder(orderNo) {
 
 /*
  *  retrieve the status of an order
+ *  returns a structure like this:
+ *  {
+ *    "order": {
+ *      "buyer": "john",
+ *      "address": "portsmouth",
+ *      "date": "2015-02-12T16:12:55.000Z",
+ *      "dispatched": "y",
+ *      "id": "20",
+ *      "lines": [
+ *        {
+ *          "product": 2,
+ *          "title": "Gunon P40E",
+ *          "price": 580.99,
+ *          "qty": 2
+ *        },
+ *        {
+ *          "product": 1,
+ *          "title": "Nixon 123X",
+ *          "price": 123.45,
+ *          "qty": 1
+ *        }
+ *      ]
+ *    }
+ *  }
  */
 function getOrder(req, res, next) {
     var query = sql.format(
@@ -415,20 +535,6 @@ function simpleSQLQuery(query, dataFunction, expressResponse, next) {
 /*
  *  error handling helper functions and a class
  */
-function WebAppError(status, message) {
-    Error.call(this);
-    this.name = "WebAppError";
-    this.status = status;
-    this.message = message;
-    if (typeof(message) === 'string') this.message += '\n';
-}
-WebAppError.prototype = Object.create(Error.prototype);
-
-function handleWebAppError(err, req, res, next) {
-    res.status(err.status).send(err.message);
-    next();
-}
-
 function webappError(status, message) {
     return new WebAppError(status, message);
 }
@@ -439,10 +545,24 @@ function databaseError(err) {
     return new WebAppError(500, 'database error');
 }
 
+function WebAppError(status, message) {
+    Error.call(this);
+    this.name = "WebAppError";
+    this.status = status;
+    this.message = message;
+    if (typeof(message) === 'string') this.message += '\n';
+}
+WebAppError.prototype = Object.create(Error.prototype);
+
 function rollback(err, next) {
     // no need to wait for the rollback to execute, call next() right away
     sql.rollback();
     next(databaseError(err));
+}
+
+function handleWebAppError(err, req, res, next) {
+    res.status(err.status || 500).send(err.message || "unknown server error");
+    next();
 }
 
 
