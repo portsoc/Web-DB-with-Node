@@ -190,7 +190,7 @@ function listProducts (req, res, next) {
     simpleSQLQuery({sql: query, nestTables: true}, productsFromSQL, res, next);
 
     function productsFromSQL(results) {
-        if (results.length === 0) return next(webappError(404, 'no such category: ' + req.params.id));
+        if (results.length === 0) return void next(webappError(404, 'no such category: ' + req.params.id));
 
         var products = {
             category: results[0].C.name,
@@ -266,7 +266,8 @@ function addOrder(req, res, next) {
             assert(Object.getOwnPropertyNames(priceCheck).length === data.order.lines.length,
                                                                     "order cannot have multiple lines with the same product");
         } catch (e) {
-            return next(webappError(400, 'invalid order: ' + e.message));
+            next(webappError(400, 'invalid order: ' + e.message));
+            return;
         }
 
         // now verify that the products exist and have the right prices
@@ -295,10 +296,11 @@ function addOrder(req, res, next) {
         // therefore, if we get fewer products than expected, some product ID doesn't exist or its price is not right
 
         sql.query(query, function(err, results) {
-            if (err) return next(databaseError(err));
+            if (err) return void next(databaseError(err));
 
             if (results[0].c !== expectedCount) {
-                return next(webappError(400, 'sorry, prices have changed'));
+                next(webappError(400, 'sorry, prices have changed'));
+                return;
             } else {
                 storeValidOrder(extractValidOrder(data));
             }
@@ -378,19 +380,19 @@ function addOrder(req, res, next) {
         // the statements are nested because each should only run if the preceding one succeeded
 
         sql.beginTransaction(function (err) {
-            if (err) return next(databaseError(err));
+            if (err) return void next(databaseError(err));
 
             sql.query(queryInsertCustomer, function (err) {
-                if (err) return rollback(err, next);
+                if (err) return void rollback(err, next);
 
                 sql.query(queryInsertOrder, function (err, insertOrderResults) {
-                    if (err) return rollback(err, next);
+                    if (err) return void rollback(err, next);
 
                     sql.query(queryInsertLines, function (err) {
-                        if (err) return rollback(err, next);
+                        if (err) return void rollback(err, next);
 
                         sql.commit(function (err) {
-                            if (err) return rollback(err, next);
+                            if (err) return void rollback(err, next);
 
                             // all the queries have gone through and are committed,
                             // so now return the complete order
@@ -471,7 +473,7 @@ function getOrder(req, res, next) {
     simpleSQLQuery({sql: query, nestTables: true}, ordersFromSQL, res, next);
 
     function ordersFromSQL(results) {
-        if (results.length === 0) return next(webappError(404, 'no such order: ' + req.params.id));
+        if (results.length === 0) return void next(webappError(404, 'no such order: ' + req.params.id));
 
         return { order: {
             buyer: results[0].C.name,
@@ -517,14 +519,15 @@ function notImplemented(req, res) {
 
 function simpleSQLQuery(query, dataFunction, expressResponse, next) {
     sql.query(query, function(err, results) {
-        if (err) return next(databaseError(err));
+        if (err) return void next(databaseError(err));
 
         try {
             var data = dataFunction(results);
             if (data) expressResponse.send(data);
         } catch (e) {
             if (e instanceof WebAppError) {
-                return next(e);
+                next(e);
+                return;
             } else {
                 throw e;
             }
@@ -592,7 +595,8 @@ function checkApiKey (req, res, next) {
     var creds = auth(req);
     if (!creds || creds.name !== config.apiKey) {
         res.set('WWW-Authenticate', 'Basic realm=API Key required');
-        return res.status(401).send('API Key required');
+        res.status(401).send('API Key required');
+        return;
     }
     next();
 }
