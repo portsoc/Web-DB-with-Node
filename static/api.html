@@ -16,8 +16,10 @@ pre:hover { max-height: 30em; transition: 1s;}
   <li><a href="#cats"><code>/api/categories/</code></a> – the list of all categories
   <li><a href="#cat"><code>/api/categories/:id/</code></a> – the list of products in a given category
   <li><a href="#ords"><code>/api/orders/</code></a> – the orders
-  <li><a href="#ord"><code>/api/orders/:number</code></a> – a particular order
+  <li><a href="#ord"><code>/api/orders/:number/</code></a> – a particular order
 </ol>
+
+<p>All the methods need an API key, assigned by the administrator.</p>
 
 <section>
   <h2 id="cats"><code>/api/categories/</code> – the list of all categories</h2>
@@ -105,7 +107,7 @@ pre:hover { max-height: 30em; transition: 1s;}
 </section>
 
 <section>
-  <h2 id="ord"><code>/api/orders/:number</code> – a particular order</h2>
+  <h2 id="ord"><code>/api/orders/:number/</code> – a particular order</h2>
   <p>Supports HTTP GET to retrieve the details of a single order. Example
   output:</p>
   <pre>{
