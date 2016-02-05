@@ -4,32 +4,90 @@
  * author: Jacek Kopecký, jacek@jacek.cz, http://github.com/jacekkopecky
  */
 
+/*jslint node:true*/
 'use strict';
 
-var express = require('express')
-var fs = require('fs')
-var bodyParser = require('body-parser');
-var auth = require('basic-auth');
+var bodyParser = require('body-parser'),
+    auth = require('basic-auth'),
+    express = require('express'),
+    config = require('./config.js'),
+    app = express()
 
-var app = express()
+/*************************************************
+ *
+ *  set up server options and resources
+ *
+ *************************************************/
+
+/*
+ *  by default, express.js treats resource paths like "/foo" and "/foo/" as the same, we don't want that
+ */
 app.set('strict routing', true)
 
-app.use(express.static('static', { maxAge: 5*60*1000 /* fiveMinutes */, extensions: [ "html" ] }));
+/*
+ *  this will serve our static files
+ */
+app.use(express.static('static', config.expressStatic))
 
-app.use(bodyParser.json({limit: 4096}))
+/*
+ *  this will add support for JSON payloads in incoming data
+ */
+app.use(bodyParser.json(config.bodyParser_JSON))
 
+/*
+ *  redirect from /api/ to /api which is actually static/api.html - the API documentation
+ */
+app.get('/api/', function(req, res) { res.redirect('/api'); })
 
-var apiKey = 'orewgthwoetgoirwejgboerigqt';
+/*
+ *  require api key for api calls
+ *  we want to have an API key to be able to manage the use of our API
+ *  it's here after setting /api/ so that we don't require the key for /api/
+ */
+app.use('/api/*', checkApiKey)
 
-function checkApiKey (req, res, next) {
-    var creds = auth(req);
-    if (!creds || creds.name !== apiKey) {
-        res.set('WWW-Authenticate', 'Basic realm=API Key required');
-        return res.status(401).send('API Key required');
-    }
-    next();
+/*
+ *  delay every API request by 1s (or whatever config.js says) to simulate relatively slow network
+ */
+if (config.apiCallDelay) {
+    app.use('/api/*', function (req, res, next) {
+        setTimeout(next, config.apiCallDelay)
+    })
 }
 
+/*
+ *  set up main application resources, grouped here by URI
+ */
+app.get('/api/categories/',      listCategories)
+app.post('/api/categories/',     addCategory)
+
+app.get('/api/categories/:id/',  listProducts)
+app.post('/api/categories/:id/', addProductToCategory)
+
+app.post('/api/orders/',         addOrder)
+
+app.get('/api/orders/:id/',      getOrder)
+
+/*
+ *  setup redirects to URIs with slash at the end so that relative URIs work better
+ */
+app.get('/api/categories',       redirectToSlash)
+app.get('/api/categories/:id',   redirectToSlash)
+app.get('/api/orders/:id',       redirectToSlash)
+
+function redirectToSlash(req, res) { res.redirect(req.url + '/'); }
+
+/*
+ *  start server
+ */
+app.listen(config.port)
+console.log("server started on port " + config.port)
+
+
+
+/*
+ *  in-memory variables that store the data
+ */
 
 var categories = {
       categories: [
@@ -43,7 +101,6 @@ var categories = {
     };
 
 var products = [];
-
 products['cam'] = {
       category: 'Cameras',
       products: {
@@ -89,7 +146,6 @@ products['laptop'] = {
         }
       }
     };
-
 products['phone'] = {
       category: 'Phones',
       products: {
@@ -202,32 +258,27 @@ var orders = [
 
 
 
-app.get('/api/', function(req, res) { res.redirect('/api'); });
 
-// require api key for api calls
-// it's here after setting /api/ so that we don't require the key for /api/
-app.use('/api/*', checkApiKey);
+function listCategories (req, res) {
+  res.send(categories);
+}
 
-app.use('/api/*', delay);
+function addCategory(req, res) {
+  notImplemented(req, res);
+}
 
+function listProducts(req, res) {
+    if (req.params.id in products)
+      res.send(products[req.params.id]);
+    else
+      res.status(404).send('no such category: ' + req.params.id + '\n');
+}
 
-app.get('/api/categories', function(req, res) { res.redirect(req.url + '/'); });
-app.get('/api/categories/:id', function(req, res) { res.redirect(req.url + '/'); });
-
-app.get('/api/categories/', function(req, res) {
-    res.send(categories);
-});
-
-app.post('/api/categories/', notImplemented);
-
-app.get('/api/categories/:id/', function(req, res) {
-    if (req.params.id in products) res.send(products[req.params.id]);
-    else res.status(404).send('no such category: ' + req.params.id + '\n');
-});
-
-app.post('/api/categories/:id/', function(req, res) {
-    if (!(req.params.id in products)) res.status(404).send('no such category: ' + req.params.id + '\n');
-    if (!req.body) res.status(400).send('POST needs a JSON object body with one or more products in it\n');
+function addProductToCategory(req, res) {
+    if (!(req.params.id in products))
+      return void res.status(404).send('no such category: ' + req.params.id + '\n');
+    if (!req.body)
+      return void res.status(400).send('POST needs a JSON object body with one or more products in it\n');
 
     for (var product in req.body) {
         if (product in products[req.params.id]) {
@@ -240,18 +291,21 @@ app.post('/api/categories/:id/', function(req, res) {
         products[req.params.id][product] = req.body[product];
     }
     res.send("products added\n");
-});
+}
 
-app.post('/api/orders/', function(req, res) {
-    if (!req.body) res.status(400).send('POST needs a JSON object body with one or more products in it\n');
-    var order = req.body;
+function addOrder(req, res) {
+    if (!req.body || !req.body.order)
+      return void res.status(400).send('POST needs a JSON object body with one or more products in it\n');
+
+    var order = req.body.order;
     order.date = new Date();
     order.dispatched = false;
     var orderNo = orders.push(order) - 1;
+    order.id = orderNo;
 
     var orderURL = '/api/orders/' + orderNo;
     res.set('Content-Location', orderURL);
-    res.location(orderURL).status(201).send(order);
+    res.location(orderURL).status(201).send({order: order});
 
     console.log("received order " + orderNo);
 
@@ -261,27 +315,38 @@ app.post('/api/orders/', function(req, res) {
         order.dispatched = true;
         console.log("dispatched order " + orderNo);
     }
-});
+}
 
-app.get('/api/orders/:id', function(req, res) {
-    if (!(req.params.id in orders)) res.status(404).send('no such order: ' + req.params.id + '\n');
+function getOrder(req, res) {
+    if (!(req.params.id in orders))
+      return void res.status(404).send('no such order: ' + req.params.id + '\n');
+
     res.send({order: orders[req.params.id]});
-});
-
-// rate limiting, validation, authorization
-
-app.listen(8080);
-
-console.log("server started on port 8080");
+}
 
 
 
+
+
+/*************************************************
+ *
+ *  helpful functions
+ *
+ *************************************************/
 
 function notImplemented(req, res) {
     res.status(501).send("this functionality is envisioned but not implemented yet\n");
 }
 
-function delay(req, res, next) {
-    // next();
-    setTimeout(next, 1000);
+/*
+ *  API key checking
+ */
+function checkApiKey (req, res, next) {
+    var creds = auth(req);
+    if (!creds || creds.name !== config.apiKey) {
+        res.set('WWW-Authenticate', 'Basic realm=API Key required');
+        res.status(401).send('API Key required');
+        return;
+    }
+    next();
 }
