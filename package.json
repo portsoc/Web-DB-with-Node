@@ -7,7 +7,7 @@
       "express": "4.x",
       "body-parser": "1.x.x",
       "basic-auth": "1.x.x",
-      "mysql": "2.5.x"
+      "mysql": "2.x.x"
     },
     "jshintConfig": {
         "asi": true,
