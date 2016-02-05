@@ -479,7 +479,7 @@ function getOrder(req, res, next) {
             buyer: results[0].C.name,
             address: results[0].C.address,
             date: results[0].O.date,
-            dispatched: results[0].O.dispatched,
+            dispatched: results[0].O.dispatched == 'y',
             id: req.params.id,
             lines: results.map(function (row) {
                 return {
