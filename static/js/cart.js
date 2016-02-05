@@ -95,7 +95,7 @@ function orderSubmitted() {
         // parse order, get its ID
         var data = JSON.parse(this.responseText);
         var orderId = data.order.id;
-        
+
         // redirect to the order tracking page
         window.location = "/order?id=" + encodeURIComponent(orderId);
     } catch (err) {
