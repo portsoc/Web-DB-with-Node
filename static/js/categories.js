@@ -22,7 +22,8 @@ function populateCategories() {
     var categoriesEl = byId('categories');
 
     // empty the current list
-    while (categoriesEl.firstChild) categoriesEl.removeChild(categoriesEl.firstChild);
+    while (categoriesEl.firstChild)
+      categoriesEl.removeChild(categoriesEl.firstChild);
 
     data.categories.forEach(function (category, idx) {
         var li = document.createElement('li');
@@ -55,4 +56,3 @@ function selectCategory(listItem) {
 function apiFail() {
     findEl(document, 'main').innerHTML = "Sorry, the site is temporarily unhappy, please try again later.";
 }
-
