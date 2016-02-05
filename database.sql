@@ -1,9 +1,9 @@
 -- database setup in MySQL:
 
-CREATE USER dbprin@localhost identified by 'weiothbgdls';
-CREATE DATABASE dbprin;
-GRANT SELECT, INSERT, UPDATE ON dbprin.* to dbprin@localhost;
-USE dbprin;
+CREATE USER dbprinHappyShop@localhost identified by 'weiothbgdls';
+CREATE DATABASE dbprinHappyShop;
+GRANT SELECT, INSERT, UPDATE ON dbprinHappyShop.* to dbprinHappyShop@localhost;
+USE dbprinHappyShop;
 
 DROP TABLE IF EXISTS OrderLine;
 DROP TABLE IF EXISTS `Order`;

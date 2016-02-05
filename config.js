@@ -2,9 +2,9 @@ module.exports = {
     apiKey: 'orewgthwoetgoirwejgboerigqt',
     mysql: {
         host:'localhost',
-        user:'dbprin',
+        user:'dbprinHappyShop',
         password:'weiothbgdls',
-        database: 'dbprin'
+        database: 'dbprinHappyShop'
     },
     expressStatic: {
         maxAge: 5*60*1000, /* fiveMinutes */
