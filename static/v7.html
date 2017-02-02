@@ -6,7 +6,6 @@
 <script src="js/categories.js"></script>
 <script src="js/products.js"></script>
 <script src="js/cart.js"></script>
-
 <!--
     On top of v6, this version adds a shopping cart and submitting orders.
 -->
@@ -14,33 +13,34 @@
 <h1>Happy Online &#x263a; Shop v7</h1>
 
 <main>
-    <ul id="categories">
-      <li class='active'>loading&hellip;
-    </ul>
 
-    <section id="products">
-      <h2 id="category_title" class="loading">loading&hellip;</h2>
+  <ul id="categories">
+    <li class='active'>loading&hellip;
+  </ul>
 
-      <template id="product_template">
-        <section class="product">
-          <h2 class="title"> </h2>
-          <p  class="price"></p>
-          <p  class="desc"></p>
-          <p  class="suppl"></p>
-          <p  class="stock"></p>
-          <button class="addtocart" onclick="addProductToCart(this.parentElement.product)">Add to cart</button>
-        </section>
-      </template>
+  <section id="products">
+    <h2 id="category_title" class="loading">loading&hellip;</h2>
 
-    </section>
+    <template id="product_template">
+      <section class="product">
+        <h2 class="title"></h2>
+        <p  class="price"></p>
+        <p  class="desc"></p>
+        <p  class="suppl"></p>
+        <p  class="stock"></p>
+        <button class="addtocart" onclick="addProductToCart(this.parentElement.product)">Add to cart</button>
+      </section>
+    </template>
 
-    <aside id="cart" class="empty">
-      <p class="count"></p><p class="price">0</p>
-      <label class="main">Please tell us about yourself:</label>
-      <label for="cart-name" class="name">Name:</label><input class="name" id="cart-name" onblur="verifyNonEmpty(this)">
-      <label for="cart-addr" class="addr">Address:</label><input class="addr" id="cart-addr" onblur="verifyNonEmpty(this)">
-      <button id="placeorder" onclick="placeOrder()">Place order</button>
-    </aside>
+  </section>
+
+  <aside id="cart" class="empty">
+    <p class="count"></p><p class="price">0</p>
+    <label class="main">Please tell us about yourself:</label>
+    <label for="cart-name" class="name">Name:</label><input class="name" id="cart-name" onblur="verifyNonEmpty(this)">
+    <label for="cart-addr" class="addr">Address:</label><input class="addr" id="cart-addr" onblur="verifyNonEmpty(this)">
+    <button id="placeorder" onclick="placeOrder()">Place order</button>
+  </aside>
 
 </main>
 
