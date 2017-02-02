@@ -594,9 +594,20 @@ function reconnectMysqlConnection() {
 function checkApiKey (req, res, next) {
     var creds = auth(req);
     if (!creds || creds.name !== config.apiKey) {
-        res.set('WWW-Authenticate', 'Basic realm=API Key required');
-        res.status(401).send('API Key required');
+        if (config.apiCallDelay && creds) {
+          // we have credentials, they aren't the right ones, client should wait
+          setTimeout(sendWWWAuthenticate, config.apiCallDelay, res)
+        } else {
+          // no wait delay or no credentials
+          // no credentials should not wait because it's the browser's try without authentication
+          sendWWWAuthenticate(res);
+        }
         return;
     }
     next();
+}
+
+function sendWWWAuthenticate(res) {
+    res.set('WWW-Authenticate', 'Basic realm=API Key required');
+    res.status(401).send('API Key required');
 }
