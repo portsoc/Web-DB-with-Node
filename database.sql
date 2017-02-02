@@ -1,31 +1,31 @@
 -- database setup in MySQL:
 
-CREATE USER dbprinHappyShop@localhost identified by 'weiothbgdls';
-CREATE DATABASE dbprinHappyShop;
-GRANT SELECT, INSERT, UPDATE ON dbprinHappyShop.* to dbprinHappyShop@localhost;
-USE dbprinHappyShop;
+create user dbprinHappyShop@localhost identified by 'weiothbgdls';
+create database dbprinHappyShop;
+grant select, insert, update on dbprinHappyShop.* to dbprinHappyShop@localhost;
+use dbprinHappyShop;
 
-DROP TABLE IF EXISTS OrderLine;
-DROP TABLE IF EXISTS `Order`;
-DROP TABLE IF EXISTS Customer;
-DROP TABLE IF EXISTS Product;
-DROP TABLE IF EXISTS Supplier;
-DROP TABLE IF EXISTS Category;
+drop table if exists OrderLine;
+drop table if exists `Order`;
+drop table if exists Customer;
+drop table if exists Product;
+drop table if exists Supplier;
+drop table if exists Category;
 
-CREATE TABLE IF NOT EXISTS Category (
+create table if not exists Category (
     id       varchar(8)  primary key,
     name     varchar(20) not null,
     priority double      not null unique,
     key(priority, name) -- so that we can order by the index
 ) engine=InnoDB;
 
-CREATE TABLE IF NOT EXISTS Supplier (
+create table if not exists Supplier (
     id   int         primary key auto_increment,
     name varchar(30) not null
     -- probably also some contact details but that's not necessary in the demo
 ) engine=InnoDB;
 
-CREATE TABLE IF NOT EXISTS Product (
+create table if not exists Product (
     id          int                 primary key auto_increment,
     name        varchar(30)         not null,
     price       decimal(8,2)        not null,
@@ -37,14 +37,14 @@ CREATE TABLE IF NOT EXISTS Product (
     constraint foreign key (supplier) references Supplier(id)
 ) engine=InnoDB;
 
-CREATE TABLE IF NOT EXISTS Customer (
+create table if not exists Customer (
     id      int          primary key auto_increment,
     name    varchar(40)  not null,
     address varchar(200) not null,
     unique key (name, address)
 ) engine=InnoDB;
 
-CREATE TABLE IF NOT EXISTS `Order` (
+create table if not exists `Order` (
     id         int           primary key auto_increment,
     customer   int           not null,
     constraint foreign key (customer) references Customer(id),
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS `Order` (
     dispatched enum('y','n') not null default 'n'
 ) engine=InnoDB;
 
-CREATE TABLE IF NOT EXISTS OrderLine (
+create table if not exists OrderLine (
     primary key (`order`, product),
     `order`  int,
     constraint foreign key (`order`) references `Order`(id),
@@ -67,17 +67,17 @@ CREATE TABLE IF NOT EXISTS OrderLine (
 
 -- sample data
 
-INSERT INTO Category (id, name, priority) VALUES
+insert into Category (id, name, priority) values
     ('cam', 'Cameras', 1), ('phone', 'Phones', 2), ('laptop', 'Laptops', 3);
 
-INSERT INTO Supplier(id, name) VALUES
+insert into Supplier(id, name) values
     (1, 'Nixon Specialists Inc.'),
     (2, 'BigShop Inc.'),
     (3, 'Kaboodle Inc.'),
     (4, 'Oranges Pears etc. Ltd'),
     (5, 'Random Corp.');
 
-INSERT INTO Product(id, name, price, description, stock, category, supplier) VALUES
+insert into Product(id, name, price, description, stock, category, supplier) values
     (1, 'Nixon 123X',         123.45, 'A basic camera, 12.3MPix',                                    14, 'cam',    1),
     (2, 'Gunon P40E',         580.99, 'Body (no lenses), 40MPix',                                     2, 'cam',    2),
     (3, 'Gunon P30E',         399.99, 'Body (no lenses), 30MPix, discontinued',                       0, 'cam',    2),
@@ -95,15 +95,15 @@ INSERT INTO Product(id, name, price, description, stock, category, supplier) VAL
     (15, 'example 6',         128.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks', 317, 'phone',  5),
     (16, 'example 7',         164.90, 'lorem ipsum ioewtybnz sdfjiowep lgjreuoq dfljoqp zahb alks',  44, 'phone',  5);
 
-INSERT INTO Customer (id, name, address) VALUES
+insert into Customer (id, name, address) values
     (1, 'Mr Anderson', '42 The Matrix'),
     (2, 'Ms Munchkin', '1 Yellow Brick Road, Ozshire');
 
-INSERT INTO `Order` (id, customer, date) VALUES
+insert into `Order` (id, customer, date) values
     (1, 1, now()),
     (2, 2, now());
 
-INSERT INTO OrderLine (`order`, product, quantity, price) VALUES
+insert into OrderLine (`order`, product, quantity, price) values
     (1, 5, 1, 320),
     (1, 2, 1, 599.99),
     (2, 5, 2, 310);
