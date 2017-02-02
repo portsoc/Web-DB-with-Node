@@ -12,5 +12,8 @@
     "jshintConfig": {
         "asi": true,
         "multistr": true
+    },
+    "scripts": {
+        "start": "node server-inmemory.js"
     }
 }
