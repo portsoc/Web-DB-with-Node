@@ -164,14 +164,14 @@ products['phone'] = {
           supplier: 'Kaboodle Inc.'
         },
         iph6: {
-          title: 'flyPhone 6',
+          title: 'flyPhone 7',
           price: 7399.90,
           description: 'not cheap but desirable',
           stock: 137,
           supplier: 'Oranges Pears etc. Ltd'
         },
         iph6p: {
-          title: 'flyPhone 6+',
+          title: 'flyPhone 7+',
           price: 125999.90,
           description: 'honking big, newest and greatest',
           stock: 29,
