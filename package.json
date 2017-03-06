@@ -20,6 +20,6 @@
   },
   "scripts": {
     "start": "node server-inmemory.js",
-    "startphp": "php -S localhost:8080 php-version/index.php"
+    "startphp": "php -S 0.0.0.0:8080 php-version/index.php"
   }
 }
