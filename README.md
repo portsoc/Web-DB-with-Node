@@ -9,6 +9,7 @@ with Node.js
  - `server-inmemory.js` – simple, in-memory version of the server
  - `database.sql` – the SQL commands to set up the database
  - `package.json` – defines the dependencies of this package.
+ - `php-version` - a partial implementation of the API in PHP.
 
 ### Installation
 
@@ -27,3 +28,16 @@ _Instructions for students new to Node.js_
    - if you want to change the port at which the server listens (the default is 8080), you can run `PORT=yournumber node server.js` or put your preferred port number in `config.js`
    - to drop the delay for API calls (by default 1s), change the `1000` in `config.js` to `0`
    - if you've changed your `config.js`, kill the server (e.g. with `Ctrl-C`) and start it again
+
+### PHP
+
+A subset of the API is presented using PHP to illustrate that the API is an interface
+and that the client _can_ and _should_ be completely agnostic and unaware of the technology
+that is fulfilling its requests.
+
+e.g, Once the client is loaded, stop the node server, then start the PHP server as follows:
+```shell
+npm start
+```
+Navigating around the page should still be possible as the content is provided by PHP in response to each category selection.
+ 

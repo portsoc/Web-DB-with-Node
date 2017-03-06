@@ -1,16 +1,24 @@
 {
-    "name": "DBPRIN-node-example",
-    "description": "an example server and API for a database app",
-    "version": "0.0.1",
-    "private": true,
-    "dependencies": {
-      "express": "4.x",
-      "body-parser": "1.x.x",
-      "basic-auth": "1.x.x",
-      "mysql": "2.x.x"
-    },
-    "jshintConfig": {
-        "asi": true,
-        "multistr": true
-    }
+  "name": "Web-DB-with-node",
+  "description": "An example server and API for a database app",
+  "version": "0.0.2",
+  "private": true,
+  "dependencies": {
+    "express": "4.x",
+    "body-parser": "1.x.x",
+    "basic-auth": "1.x.x",
+    "mysql": "2.x.x"
+  },
+  "author": "Jacek Kopecký <jacek@port.ac.uk> (http://jacek.soc.port.ac.uk/)",
+  "contributors": [
+    "Rich Boakes <rjb@port.ac.uk> (http://rjb.soc.port.ac.uk/)",
+    "Jacek Kopecký <jacek@port.ac.uk> (http://jacek.soc.port.ac.uk/)"
+  ],
+  "jshintConfig": {
+    "asi": true,
+    "multistr": true
+  },
+  "scripts": {
+    "start": "php -S localhost:8080 php-version/index.php"
+  }
 }
