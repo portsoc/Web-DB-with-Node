@@ -19,6 +19,7 @@
     "multistr": true
   },
   "scripts": {
-    "start": "php -S localhost:8080 php-version/index.php"
+    "start": "node server-inmemory.js",
+    "startphp": "php -S localhost:8080 php-version/index.php"
   }
 }
