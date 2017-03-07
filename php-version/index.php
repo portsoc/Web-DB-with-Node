@@ -1,11 +1,24 @@
 <?php
+/**
+ * A subset of the API is presented here using
+ * PHP to illistrate that the API is an interface
+ * and that the client can and should be completely
+ * agnostic and unaware of the technology that is
+ * fulfilling it's requests.
+ *
+ *
+ * Implemented:
+ *    GET /api/categories
+ *    GET /api/categories/:id/
+ */
+
 
 include __DIR__.'/config.php';
 include __DIR__.'/db.php';
 
+
 // array of function names that are allowed to be called
 $whitelist = [ "categories" ];
-
 $path = explode('/', ltrim($_SERVER['REQUEST_URI'], "/"));
 
 // if the URL does not begin with /api
@@ -22,6 +35,7 @@ if (in_array($path[1], $whitelist)) {
 } else {
     send($path[1] . " is not a valid API endpoint, sorry!", 404, "Not Found");
 }
+
 
 /**
  * Send a structured object to the client, setting
