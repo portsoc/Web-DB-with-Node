@@ -61,7 +61,7 @@ function send($results, $code = 200, $msg = "OK") {
 function categories($path) {
     $result = [];
     if ($_SERVER['REQUEST_METHOD'] == "GET") {
-      if (isset($path[2])) {
+      if (isset($path[2]) && strlen(trim($path[2])) != 0) {
         $result = listProducts($path[2]);
       } else {
         $result = listCategories();
