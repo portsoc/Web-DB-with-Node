@@ -329,8 +329,8 @@ function addOrder(req, res) {
 
   console.log('received order ' + orderNo);
 
-  // dispatch the order in a minute
-  setTimeout(dispatch, 60000);
+  // dispatch the order in a moment
+  setTimeout(dispatch, 10000);
   function dispatch() {
     order.dispatched = true;
     console.log('dispatched order ' + orderNo);

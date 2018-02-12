@@ -424,8 +424,8 @@ function addOrder(req, res, next) {
 
               console.log('received order ' + orderNo);
 
-              // schedule to dispatch the order in a minute
-              setTimeout(dispatchOrder, 60000, orderNo);
+              // schedule to dispatch the order in a moment
+              setTimeout(dispatchOrder, 10000, orderNo);
             });
           });
         });
@@ -437,7 +437,7 @@ function addOrder(req, res, next) {
 /*
  *  set the given order as dispatched
  *  this isn't directly used by the API; rather it's currently
- *  automatically "faked" a minute after the order is created (unless the server gets restarted)
+ *  automatically "faked" a moment after the order is created (unless the server gets restarted)
  */
 function dispatchOrder(orderNo) {
   const query = sql.format("UPDATE `Order` set dispatched='y' where id=?", orderNo);
