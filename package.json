@@ -14,12 +14,21 @@
     "Rich Boakes <rjb@port.ac.uk> (http://rjb.soc.port.ac.uk/)",
     "Jacek Kopecký <jacek@port.ac.uk> (http://jacek.soc.port.ac.uk/)"
   ],
+  "devDependencies": {
+    "eslint": "^4.12.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-react": "^7.5.1",
+    "nodemon": "^1.12.1"
+  },
   "jshintConfig": {
     "asi": true,
     "multistr": true
   },
   "scripts": {
     "start": "node server-inmemory.js",
-    "startphp": "php -S 0.0.0.0:8080 php-version/index.php"
+    "startphp": "php -S 0.0.0.0:8080 php-version/index.php",
+    "nodemon": "node_modules/.bin/nodemon -i static/ server-inmemory"
   }
 }
