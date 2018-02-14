@@ -1,8 +1,9 @@
 // functions for loading and showing an order
 
-/* global byId, apiKey, getParameterByName */
+// this file requires the following various functions to be defined outside
+/* global byId, getParameterByName, auth */
 
-function loadOrder() {
+async function loadOrder() {
   const orderURI = '/api/orders/' + encodeURIComponent(getParameterByName('id')) + '/';
   if (orderURI === '') {
     byId('order').textContent = 'no order specified';
@@ -12,20 +13,17 @@ function loadOrder() {
   byId('orderid').textContent = orderURI;
   byId('order').innerHTML = 'loading&hellip;';
 
-  const xhr = new XMLHttpRequest();
-  xhr.onload = populateOrderData;
-  xhr.onerror = apiFail;
-  xhr.open('get', orderURI, true, apiKey);
-  xhr.send();
-}
-
-function populateOrderData() {
-  if (this.status >= 300) {
+  const response = await fetch(orderURI, auth());
+  if (!response.ok) {
     apiFail();
     return;
   }
 
-  const data = JSON.parse(this.responseText);
+  const data = await response.json();
+  populateOrderData(data);
+}
+
+function populateOrderData(data) {
   byId('order').textContent = JSON.stringify(data, null, 2);
 }
 

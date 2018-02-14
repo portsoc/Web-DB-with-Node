@@ -1,28 +1,23 @@
 // functions for loading and showing the list of categories
 
-// this file requires the variable `apiKey` and various functions to be defined outside
-/* global findEl, byId, loadProducts, apiKey */
+// this file requires the following various functions to be defined outside
+/* global findEl, byId, loadProducts, auth */
 
 // get a list of categories from the server
-function loadCategories() {
-  const xhr = new XMLHttpRequest();
-  xhr.onload = populateCategories;
-  xhr.onerror = () => {
+async function loadCategories() {
+  const response = await fetch('/api/categories/', auth());
+  if (!response.ok) {
     console.error('error loading categories');
-    apiFail();
-  };
-  xhr.open('get', '/api/categories/', true, apiKey);
-  xhr.send();
-}
-
-// when the list of categories is received, put it in the page as tabs
-function populateCategories() {
-  if (this.status >= 300) {
     apiFail();
     return;
   }
 
-  const data = JSON.parse(this.responseText);
+  const data = await response.json();
+  populateCategories(data);
+}
+
+// when the list of categories is received, put it in the page as tabs
+function populateCategories(data) {
   const categoriesEl = byId('categories');
 
   // empty the current list

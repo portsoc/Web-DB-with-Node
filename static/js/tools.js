@@ -20,8 +20,16 @@ function getParameterByName(name) {
   return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
 }
 
+// this function requires the variable `apiKey` to be defined outside
+/* global apiKey */
+
+function auth() {
+  return { headers: { authorization: 'Basic ' + btoa(apiKey + ':') } };
+}
+
 
 window.byId = byId;
 window.findEl = findEl;
 window.array = array;
 window.getParameterByName = getParameterByName;
+window.auth = auth;

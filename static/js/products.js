@@ -1,7 +1,7 @@
 // functions for loading and showing the products in a given category
 
-// this file requires the variable `apiKey` and various functions to be defined outside
-/* global findEl, byId, array, apiKey, apiFail */
+// this file requires the following various functions to be defined outside
+/* global findEl, byId, array, apiFail, auth */
 
 // empty the current list of products
 function cleanProducts() {
@@ -17,31 +17,32 @@ function cleanProducts() {
   productsHeader.innerHTML = 'loading&hellip;';
 }
 
-let cancelOldProductLoad = () => {};
+let loadCount = 0;
 
-function loadProducts(productsURL) {
+async function loadProducts(productsURL) {
+  // if a request is already happening in the background, we need to cancel it
+  // so keep track of how many loads we've done and only finish the request if we're the top request
+  loadCount += 1;
+  const loadNo = loadCount;
+
   cleanProducts();
 
-  cancelOldProductLoad();
-  const xhr = new XMLHttpRequest();
-  xhr.onload = populateProducts;
-  xhr.onerror = () => {
-    console.error('error loading products from category ' + productsURL);
-    apiFail();
-  };
-  xhr.open('get', productsURL, true, apiKey);
-  xhr.send();
-  cancelOldProductLoad = () => { xhr.abort(); };
-}
+  const response = await fetch(productsURL, auth());
+  if (loadNo !== loadCount) return; // aborted request because another one has happened
 
-function populateProducts() {
-  if (this.status >= 300) {
+  if (!response.ok) {
+    console.error('error loading products from category ' + productsURL);
     apiFail();
     return;
   }
 
-  const data = JSON.parse(this.responseText);
+  const data = await response.json();
+  if (loadNo !== loadCount) return; // aborted request because another one has happened
 
+  populateProducts(data);
+}
+
+function populateProducts(data) {
   const productsHeader = byId('category_title');
   productsHeader.classList.remove('loading');
   productsHeader.textContent = data.category;
