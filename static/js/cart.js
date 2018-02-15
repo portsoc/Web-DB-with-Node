@@ -1,7 +1,7 @@
 // functions for handling the shopping cart
 
-// this file requires the variable `apiKey` and various functions to be defined outside
-/* global findEl, byId, apiKey, apiFail */
+// this file requires the following various functions to be defined outside
+/* global findEl, byId, apiFail, auth */
 
 let cart = {};
 let cartPrice = 0;
@@ -56,7 +56,7 @@ function verifyWholeForm() {
   return ok;
 }
 
-function submitOrder() {
+async function submitOrder() {
   // prepare the object for submission
   const data = {
     order: {
@@ -75,29 +75,24 @@ function submitOrder() {
   byId('placeorder').disabled = true;
 
   // actually submit the data
-  const xhr = new XMLHttpRequest();
-  xhr.onload = orderSubmitted;
-  xhr.onerror = () => {
+  const fetchParams = auth();
+  fetchParams.method = 'post';
+  fetchParams.headers['Content-type'] = 'application/json';
+  fetchParams.body = JSON.stringify(data);
+  const response = await fetch('/api/orders/', fetchParams);
+  if (!response.ok) {
     console.error('error submitting order');
-    apiFail();
-  };
-  xhr.open('post', '/api/orders/', true, apiKey);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send(JSON.stringify(data));
-}
-
-function orderSubmitted() {
-  if (this.status !== 201) {
-    console.log('order not submitted as expected');
     apiFail();
     return;
   }
+  orderSubmitted(await response.json());
+}
 
+function orderSubmitted(data) {
   clearCart();
 
   try {
     // parse order, get its ID
-    const data = JSON.parse(this.responseText);
     const orderId = data.order.id;
 
     // redirect to the order tracking page
