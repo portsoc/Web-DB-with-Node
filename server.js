@@ -12,13 +12,14 @@
  */
 const bodyParser = require('body-parser');
 const auth = require('basic-auth');
-const mysql = require('mysql');
+const mysql = require('mysql2/promise');
 const assert = require('assert');
 const express = require('express');
 
 const config = require('./config.js');
 
 const app = express();
+const sqlPromise = mysql.createConnection(config.mysql);
 
 
 /* ************************************************
@@ -123,19 +124,23 @@ console.log('server starting on port ' + config.port);
  *    ]
  *  }
  */
-function listCategories(req, res, next) {
-  const query = 'SELECT id, name FROM Category ORDER BY priority, name';
+async function listCategories(req, res, next) {
+  try {
+    const sql = await sqlPromise;
+    const query = 'SELECT id, name FROM Category ORDER BY priority, name';
 
-  simpleSQLQuery(query, categoriesFromSQL, res, next);
+    const [rows] = await sql.query(query);
 
-  function categoriesFromSQL(results) {
-    const categories = results.map((row) => {
+    const categories = rows.map((row) => {
       return {
         title: row.name,
         productsURL: '/api/categories/' + row.id + '/',
       };
     });
-    return { categories };
+
+    res.send({ categories });
+  } catch (e) {
+    next(e);
   }
 }
 
@@ -174,41 +179,44 @@ function addCategory(req, res) { notImplemented(req, res); }
  *    }
  *  }
  */
-function listProducts(req, res, next) {
-  const query = sql.format(
-    `SELECT C.name, S.name, P.name, P.price, P.description, P.stock, P.id
-     FROM Category C
-     JOIN Product P on C.id = P.category
-     JOIN Supplier S on S.id = P.supplier
-     WHERE P.category = ?
-     ORDER BY P.name`,
-    req.params.id,
-  );
+async function listProducts(req, res, next) {
+  try {
+    const sql = await sqlPromise;
+    const query = sql.format(
+      `SELECT C.name, S.name, P.name, P.price, P.description, P.stock, P.id
+       FROM Category C
+       JOIN Product P on C.id = P.category
+       JOIN Supplier S on S.id = P.supplier
+       WHERE P.category = ?
+       ORDER BY P.name`,
+      req.params.id,
+    );
 
-  simpleSQLQuery({ sql: query, nestTables: true }, productsFromSQL, res, next);
+    const [rows] = await sql.query({ sql: query, nestTables: true });
+    // simpleSQLQuery({ sql: query, nestTables: true }, productsFromSQL, res, next);
 
-  function productsFromSQL(results) {
-    if (results.length === 0) {
-      next(webappError(404, 'no such category: ' + req.params.id));
-      return null;
+    if (rows.length === 0) {
+      throw new WebAppError(404, 'no such category: ' + req.params.id);
     }
 
     const products = {
-      category: results[0].C.name,
+      category: rows[0].C.name,
       products: {},
     };
 
-    results.forEach((row) => {
+    rows.forEach((row) => {
       products.products[row.P.id] = {
         title: row.P.name,
-        price: row.P.price,
+        price: Number(row.P.price),
         description: row.P.description,
-        stock: row.P.stock,
+        stock: Number(row.P.stock),
         supplier: row.S.name,
       };
     });
 
-    return products;
+    res.send(products);
+  } catch (e) {
+    next(e);
   }
 }
 
@@ -242,195 +250,202 @@ function addProductToCategory(req, res) { notImplemented(req, res); }
  *  }
  *  returns the same thing with extra "date", "dispatched" and "id" properties of the "order" object
  */
-function addOrder(req, res, next) {
-  validateOrder(req.body);
+async function addOrder(req, res, next) {
+  try {
+    const sql = await sqlPromise;
 
-  /*
-   *  validation that all the required properties are there
-   */
-  function validateOrder(data) {
-    const allowedProductIDTypes = { number: true, string: true };
-    const priceCheck = {}; // this will be a hash-table of products and their prices, used for checking the prices
-    try {
-      assert('order' in data,                                 "order data missing top-level 'order'");
-      assert(Array.isArray(data.order.lines),                 "order missing 'lines' array");
-      assert(data.order.lines.length > 0,                     "order 'lines' array must not be empty");
-      assert(typeof data.order.buyer === 'string',            "order missing 'buyer' string");
-      assert(typeof data.order.address === 'string',          "order missing 'address' string");
-      data.order.lines.forEach((line) => {
-        assert(allowedProductIDTypes[typeof line.product],    "order line missing 'product' ID string");
-        assert(typeof line.qty === 'number',                  "order line missing 'qty' number");
-        assert(Math.floor(line.qty) > 0,                      'order line qty must be at least 1');
-        assert(typeof line.price === 'number',                "order line missing 'price' number");
-        priceCheck[line.product] = line.price;
-      });
-      const lenComparison = Object.getOwnPropertyNames(priceCheck).length === data.order.lines.length;
-      assert(lenComparison,                                   'order cannot have multiple lines with the same product');
-    } catch (e) {
-      next(webappError(400, 'invalid order: ' + e.message));
-      return;
+    await validateOrder(req.body);
+
+    /*
+     *  validation that all the required properties are there
+     */
+    async function validateOrder(data) {
+      const allowedProductIDTypes = { number: true, string: true };
+      const priceCheck = {}; // this will be a hash-table of products and their prices, used for checking the prices
+      try {
+        assert('order' in data,                                 "order data missing top-level 'order'");
+        assert(Array.isArray(data.order.lines),                 "order missing 'lines' array");
+        assert(data.order.lines.length > 0,                     "order 'lines' array must not be empty");
+        assert(typeof data.order.buyer === 'string',            "order missing 'buyer' string");
+        assert(typeof data.order.address === 'string',          "order missing 'address' string");
+        data.order.lines.forEach((line) => {
+          assert(allowedProductIDTypes[typeof line.product],    "order line missing 'product' ID string");
+          assert(typeof line.qty === 'number',                  "order line missing 'qty' number");
+          assert(Math.floor(line.qty) > 0,                      'order line qty must be at least 1');
+          assert(typeof line.price === 'number',                "order line missing 'price' number");
+          priceCheck[line.product] = line.price;
+        });
+        const lenComparison = Object.getOwnPropertyNames(priceCheck).length === data.order.lines.length;
+        assert(lenComparison,                                   'order cannot have multiple lines with the same product');
+      } catch (e) {
+        throw new WebAppError(400, 'invalid order: ' + e.message);
+      }
+
+      // now verify that the products exist and have the right prices
+      await checkProductsAndPrices(priceCheck, data);
     }
 
-    // now verify that the products exist and have the right prices
-    checkProductsAndPrices(priceCheck, data);
-  }
-
-  /*
-   *  asynchronous check that the products exist and the client has the same prices as the database
-   */
-  function checkProductsAndPrices(prices, data) {
-    let query = 'SELECT count(*) AS c FROM Product WHERE false';
-    let expectedCount = 0;
-    for (const id of Object.keys(prices)) {
-      query += ' OR (id=' + sql.escape(id) + ' AND price=' + prices[id].toFixed(2) + ')';
-      expectedCount += 1;
-    }
-
-    // the above makes a query like this:
-    //     SELECT count(*) AS c
-    //     FROM Product
-    //     WHERE false
-    //        OR (id='4' AND price=349.99)
-    //        OR (id='5' AND price=299.99)
-    //
-    // which will return every product mentioned in the order, but only if the price matches our data
-    // therefore, if we get fewer products than expected, some product ID doesn't exist or its price is not right
-
-    sql.query(query, (err, results) => {
-      if (err) {
-        next(databaseError(err));
-        return;
+    /*
+     *  asynchronous check that the products exist and the client has the same prices as the database
+     */
+    async function checkProductsAndPrices(prices, data) {
+      let query = 'SELECT count(*) AS c FROM Product WHERE false';
+      let expectedCount = 0;
+      for (const id of Object.keys(prices)) {
+        query += ' OR (id=' + sql.escape(id) + ' AND price=' + prices[id].toFixed(2) + ')';
+        expectedCount += 1;
       }
 
-      if (results[0].c !== expectedCount) {
-        next(webappError(400, 'sorry, prices have changed'));
-      } else {
-        storeValidOrder(extractValidOrder(data));
-      }
-    });
-  }
+      // the above makes a query like this:
+      //     SELECT count(*) AS c
+      //     FROM Product
+      //     WHERE false
+      //        OR (id='4' AND price=349.99)
+      //        OR (id='5' AND price=299.99)
+      //
+      // which will return every product mentioned in the order, but only if the price matches our data
+      // therefore, if we get fewer products than expected, some product ID doesn't exist or its price is not right
 
-  /*
-   *  extract only the expected parts of the data structure
-   *  this function effectively ignores data that's unexpected in the incoming order
-   */
-  function extractValidOrder(data) {
-    const validOrder = {
-      order: {
-        lines: [],
-        buyer: data.order.buyer,
-        address: data.order.address,
-      },
-    };
-    data.order.lines.forEach((line) => {
-      validOrder.order.lines.push({
-        product: line.product,
-        qty: line.qty,
-        price: line.price,
-      });
-    });
-
-    return validOrder;
-  }
-
-  /*
-   *  the order is validated, let's store it in the database
-   */
-  function storeValidOrder(validOrder) {
-    // fill in date and dispatch status
-    validOrder.order.date = new Date();
-    validOrder.order.dispatched = false;
-
-    // prepare sql queries for the following:
-    // insert customer or get their ID
-    // insert order
-    // insert all the lines
-
-    const queryInsertCustomer = sql.format(
-      'INSERT INTO Customer SET ? ON DUPLICATE KEY UPDATE id=last_insert_id(id);',
-      { name: validOrder.order.buyer, address: validOrder.order.address },
-    );
-
-    // the above gives a query like
-    // INSERT INTO Customer
-    // SET `name` = 'john', `address` = 'portsmouth'
-    // ON DUPLICATE KEY UPDATE id=last_insert_id(id);
-
-    const queryInsertOrder = sql.format(
-      'INSERT INTO `Order` SET customer = last_insert_id(), ?',
-      { date: validOrder.order.date, dispatched: validOrder.order.dispatched ? 'y' : 'n' },
-    );
-
-    // the above gives a query like
-    // INSERT INTO `Order`
-    // SET customer = last_insert_id(), `date` = '2015-02-12 16:12:55.414', `dispatched` = 'n'
-
-    let queryInsertLines = 'INSERT INTO OrderLine (`order`, product, quantity, price) VALUES ';
-    validOrder.order.lines.forEach((line, idx) => {
-      if (idx) queryInsertLines += ', ';
-      queryInsertLines += '( last_insert_id(), ';
-      queryInsertLines += sql.escape(line.product) + ', ';
-      queryInsertLines += sql.escape(line.qty) + ', ';
-      queryInsertLines += sql.escape(line.price) + ')';
-    });
-
-    // the above gives a query like
-    // INSERT INTO OrderLine (`order`, product, quantity, price)
-    // VALUES ( last_insert_id(), '1', 1, 123.45),
-    //        ( last_insert_id(), '2', 2, 580.99)
-
-    // below, we use transactions here to make sure that either the above queries run successfully,
-    // or none of them run at all
-    // the statements are nested because each should only run if the preceding one succeeded
-
-    sql.beginTransaction((err) => {
-      if (err) {
-        next(databaseError(err));
-        return;
-      }
-
-      sql.query(queryInsertCustomer, (err) => {
+      sql.query(query, (err, results) => {
         if (err) {
-          rollback(err, next);
+          next(databaseError(err));
           return;
         }
 
-        sql.query(queryInsertOrder, (err, insertOrderResults) => {
+        if (results[0].c !== expectedCount) {
+          next(webappError(400, 'sorry, prices have changed'));
+        } else {
+          storeValidOrder(extractValidOrder(data));
+        }
+      });
+    }
+
+    /*
+     *  extract only the expected parts of the data structure
+     *  this function effectively ignores data that's unexpected in the incoming order
+     */
+    function extractValidOrder(data) {
+      const validOrder = {
+        order: {
+          lines: [],
+          buyer: data.order.buyer,
+          address: data.order.address,
+        },
+      };
+      data.order.lines.forEach((line) => {
+        validOrder.order.lines.push({
+          product: line.product,
+          qty: line.qty,
+          price: line.price,
+        });
+      });
+
+      return validOrder;
+    }
+
+    /*
+     *  the order is validated, let's store it in the database
+     */
+    function storeValidOrder(validOrder) {
+      // fill in date and dispatch status
+      validOrder.order.date = new Date();
+      validOrder.order.dispatched = false;
+
+      // prepare sql queries for the following:
+      // insert customer or get their ID
+      // insert order
+      // insert all the lines
+
+      const queryInsertCustomer = sql.format(
+        'INSERT INTO Customer SET ? ON DUPLICATE KEY UPDATE id=last_insert_id(id);',
+        { name: validOrder.order.buyer, address: validOrder.order.address },
+      );
+
+      // the above gives a query like
+      // INSERT INTO Customer
+      // SET `name` = 'john', `address` = 'portsmouth'
+      // ON DUPLICATE KEY UPDATE id=last_insert_id(id);
+
+      const queryInsertOrder = sql.format(
+        'INSERT INTO `Order` SET customer = last_insert_id(), ?',
+        { date: validOrder.order.date, dispatched: validOrder.order.dispatched ? 'y' : 'n' },
+      );
+
+      // the above gives a query like
+      // INSERT INTO `Order`
+      // SET customer = last_insert_id(), `date` = '2015-02-12 16:12:55.414', `dispatched` = 'n'
+
+      let queryInsertLines = 'INSERT INTO OrderLine (`order`, product, quantity, price) VALUES ';
+      validOrder.order.lines.forEach((line, idx) => {
+        if (idx) queryInsertLines += ', ';
+        queryInsertLines += '( last_insert_id(), ';
+        queryInsertLines += sql.escape(line.product) + ', ';
+        queryInsertLines += sql.escape(line.qty) + ', ';
+        queryInsertLines += sql.escape(line.price) + ')';
+      });
+
+      // the above gives a query like
+      // INSERT INTO OrderLine (`order`, product, quantity, price)
+      // VALUES ( last_insert_id(), '1', 1, 123.45),
+      //        ( last_insert_id(), '2', 2, 580.99)
+
+      // below, we use transactions here to make sure that either the above queries run successfully,
+      // or none of them run at all
+      // the statements are nested because each should only run if the preceding one succeeded
+
+      // create a new connection so another addOrder() doesn't mix into our transaction
+      const transactionConnection = await mysql.createConnection(config.mysql);
+      transactionConnection.beginTransaction((err) => {
+        if (err) {
+          next(databaseError(err));
+          return;
+        }
+
+        sql.query(queryInsertCustomer, (err) => {
           if (err) {
             rollback(err, next);
             return;
           }
 
-          sql.query(queryInsertLines, (err) => {
+          sql.query(queryInsertOrder, (err, insertOrderResults) => {
             if (err) {
               rollback(err, next);
               return;
             }
 
-            sql.commit((err) => {
+            sql.query(queryInsertLines, (err) => {
               if (err) {
                 rollback(err, next);
                 return;
               }
 
-              // all the queries have gone through and are committed,
-              // so now return the complete order
+              sql.commit((err) => {
+                if (err) {
+                  rollback(err, next);
+                  return;
+                }
 
-              const orderNo = insertOrderResults.insertId;
-              validOrder.order.id = orderNo;
-              const orderURL = '/api/orders/' + orderNo + '/';
-              res.set('Content-Location', orderURL);
-              res.location(orderURL).status(201).send(validOrder);
+                // all the queries have gone through and are committed,
+                // so now return the complete order
 
-              console.log('received order ' + orderNo);
+                const orderNo = insertOrderResults.insertId;
+                validOrder.order.id = orderNo;
+                const orderURL = '/api/orders/' + orderNo + '/';
+                res.set('Content-Location', orderURL);
+                res.location(orderURL).status(201).send(validOrder);
 
-              // schedule to dispatch the order in a moment
-              setTimeout(dispatchOrder, 10000, orderNo);
+                console.log('received order ' + orderNo);
+
+                // schedule to dispatch the order in a moment
+                setTimeout(dispatchOrder, 10000, orderNo);
+              });
             });
           });
         });
       });
-    });
+    }
+  } catch (e) {
+    next(e);
   }
 }
 
@@ -439,17 +454,16 @@ function addOrder(req, res, next) {
  *  this isn't directly used by the API; rather it's currently
  *  automatically "faked" a moment after the order is created (unless the server gets restarted)
  */
-function dispatchOrder(orderNo) {
-  const query = sql.format("UPDATE `Order` set dispatched='y' where id=?", orderNo);
+async function dispatchOrder(orderNo) {
+  try {
+    const sql = await sqlPromise;
+    const query = sql.format("UPDATE `Order` set dispatched='y' where id=?", orderNo);
 
-  sql.query(query, (err) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-
+    await sql.query(query);
     console.log('dispatched order ' + orderNo);
-  });
+  } catch (e) {
+    console.error('error while dispatching order (ignoring): ', e);
+  }
 }
 
 /*
@@ -479,34 +493,36 @@ function dispatchOrder(orderNo) {
  *    }
  *  }
  */
-function getOrder(req, res, next) {
-  const query = sql.format(
-    `SELECT P.id, P.name, L.quantity, L.price, C.name, C.address, O.date, O.dispatched
-     FROM Customer C
-     JOIN \`Order\` O ON C.id = O.customer
-     JOIN OrderLine L ON L.\`order\` = O.id
-     JOIN Product P ON L.product = P.id
-     WHERE O.id = ?
-     ORDER BY P.name`,
-    req.params.id,
-  );
+async function getOrder(req, res, next) {
+  try {
+    const sql = await sqlPromise;
+    const query = sql.format(
+      `SELECT P.id, P.name, L.quantity, L.price, C.name, C.address, O.date, O.dispatched
+       FROM Customer C
+       JOIN \`Order\` O ON C.id = O.customer
+       JOIN OrderLine L ON L.\`order\` = O.id
+       JOIN Product P ON L.product = P.id
+       WHERE O.id = ?
+       ORDER BY P.name`,
+      req.params.id,
+    );
 
-  simpleSQLQuery({ sql: query, nestTables: true }, ordersFromSQL, res, next);
+    const [rows] = await sql.query({ sql: query, nestTables: true });
 
-  function ordersFromSQL(results) {
-    if (results.length === 0) {
-      next(webappError(404, 'no such order: ' + req.params.id));
-      return null;
+    // simpleSQLQuery(, ordersFromSQL, res, next);
+
+    if (rows.length === 0) {
+      throw new WebAppError(404, 'no such order: ' + req.params.id);
     }
 
-    return {
+    res.send({
       order: {
-        buyer: results[0].C.name,
-        address: results[0].C.address,
-        date: results[0].O.date,
-        dispatched: results[0].O.dispatched === 'y',
+        buyer: rows[0].C.name,
+        address: rows[0].C.address,
+        date: rows[0].O.date,
+        dispatched: rows[0].O.dispatched === 'y',
         id: req.params.id,
-        lines: results.map((row) => {
+        lines: rows.map((row) => {
           return {
             product: row.P.id,
             title: row.P.name,
@@ -515,7 +531,9 @@ function getOrder(req, res, next) {
           };
         }),
       },
-    };
+    });
+  } catch (e) {
+    next(e);
   }
 }
 
@@ -531,37 +549,6 @@ function notImplemented(req, res) {
 }
 
 /*
- *  runs a SQL query, gives its results to dataFunction, and sends the result back to the client
- *  parameters:
- *    query - the SQL query; or an object with more options, see mysql.query()
- *    dataFunction - a function that translates the SQL query results to a Javascript object to be sent to the client
- *    expressResponse - the `res` object on which we should respond to the client
- *    next - in case of an error, this function reports it to express
- *
- *  simpleSQLQuery handles errors both from the database or thrown by the dataFunction
- */
-
-function simpleSQLQuery(query, dataFunction, expressResponse, next) {
-  sql.query(query, (err, results) => {
-    if (err) {
-      next(databaseError(err));
-      return;
-    }
-
-    try {
-      const data = dataFunction(results);
-      if (data) expressResponse.send(data);
-    } catch (e) {
-      if (e instanceof WebAppError) {
-        next(e);
-      } else {
-        throw e;
-      }
-    }
-  });
-}
-
-/*
  *  error handling helper functions and a class
  */
 function webappError(status, message) {
@@ -570,7 +557,6 @@ function webappError(status, message) {
 
 function databaseError(err) {
   console.log(err);
-  if (err.fatal) reconnectMysqlConnection();
   return new WebAppError(500, 'database error');
 }
 
@@ -583,34 +569,10 @@ function WebAppError(status, message) {
 }
 WebAppError.prototype = Object.create(Error.prototype);
 
-function rollback(err, next) {
-  // no need to wait for the rollback to execute, call next() right away
-  sql.rollback();
-  next(databaseError(err));
-}
-
 function handleWebAppError(err, req, res, next) {
+  console.log('reporting error:', err);
   res.status(err.status || 500).send(err.message || 'unknown server error');
   next();
-}
-
-
-/*
- *  SQL connection handling
- */
-let sql;
-createMysqlConnection();
-
-function createMysqlConnection() {
-  sql = mysql.createConnection(config.mysql);
-  sql.on('error', () => {
-    reconnectMysqlConnection();
-  });
-}
-
-function reconnectMysqlConnection() {
-  console.log('sql error, trying to reconnect');
-  setTimeout(createMysqlConnection, 1000);
 }
 
 

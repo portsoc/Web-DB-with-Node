@@ -4,10 +4,10 @@
   "version": "0.0.2",
   "private": true,
   "dependencies": {
-    "express": "4.x",
-    "body-parser": "1.x.x",
     "basic-auth": "1.x.x",
-    "mysql": "2.x.x"
+    "body-parser": "1.x.x",
+    "express": "4.x",
+    "mysql2": "^1.5.2"
   },
   "author": "Jacek Kopecký <jacek@port.ac.uk> (http://jacek.soc.port.ac.uk/)",
   "contributors": [
