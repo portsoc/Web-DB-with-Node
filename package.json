@@ -6,7 +6,7 @@
   "dependencies": {
     "basic-auth": "1.x.x",
     "body-parser": "1.x.x",
-    "express": "4.x",
+    "express": "^4.16.4",
     "mysql2": "^1.5.2"
   },
   "author": "Jacek Kopecký <jacek@port.ac.uk> (http://jacek.soc.port.ac.uk/)",
@@ -20,7 +20,7 @@
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-jsx-a11y": "^6.0.2",
     "eslint-plugin-react": "^7.5.1",
-    "nodemon": "^1.12.1"
+    "nodemon": "^1.18.9"
   },
   "jshintConfig": {
     "asi": true,
